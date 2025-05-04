@@ -5,6 +5,7 @@ import { validateEmail } from "@constants/validatros";
 import { useNavigate } from "react-router-dom";
 import Toast from "@components/Toast/Toast";
 import styles from "./Login.module.css";
+import { googleLoginUrl } from "@api/api";
 
 /**
  * Componente `Login`.
@@ -127,6 +128,12 @@ export default function Login(): JSX.Element {
           />
           <button onClick={handleLogin} className={styles.button}>
             Iniciar sesión
+          </button>
+          <button
+            onClick={() => (window.location.href = googleLoginUrl)}
+            className={styles.googleButton}
+          >
+            Iniciar sesión con Google
           </button>
         </div>
       </div>

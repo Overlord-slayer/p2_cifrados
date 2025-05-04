@@ -13,8 +13,6 @@ import pyotp
 import qrcode
 import io
 import base64
-# from app.utils.logging_route import LoggingRoute
-
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -115,3 +113,5 @@ def get_me(current_user: str = Depends(get_current_user), db: Session = Depends(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"email": user.email}
+
+

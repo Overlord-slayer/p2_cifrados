@@ -10,3 +10,9 @@ class User(Base):
     totp_secret = Column(String, nullable=True)
     public_key = Column(LargeBinary, nullable=True)   # ECC/RSA pública para cifrado o firma
     is_active = Column(Boolean, default=True)
+
+    # Nuevos campos
+    is_google_account = Column(Boolean, default=False)     # Indica si el usuario usó Google
+    email_verified = Column(Boolean, default=False)        # Por si quieres manejar verificación
+    totp_verified = Column(Boolean, default=False)         # True después de escanear QR
+
