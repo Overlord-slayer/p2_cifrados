@@ -4,7 +4,7 @@ from fastapi import Header
 from sqlalchemy.orm import Session
 from app.schemas.schemas import UserCreate, UserOut, Token, UserLogin, SignupResponse
 from app.model.models import User
-from app.db.db import SessionLocal
+from app.db.db import SessionLocal, get_db
 from app.auth.utils import verify_password
 from app.auth.jwt import create_access_token, create_refresh_token, decode_token
 from app.auth.totp import verify_totp_token
@@ -16,38 +16,39 @@ import base64
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-    
 @router.post("/signup", response_model=SignupResponse)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
+    if not user.email or not user.password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    # Verifica si el correo ya está registrado
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-    totp_secret = pyotp.random_base32()
-    new_user = User(email=user.email, hashed_password=hashed_pw, totp_secret=totp_secret)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
+        totp_secret = pyotp.random_base32()
+        new_user = User(email=user.email, hashed_password=hashed_pw, totp_secret=totp_secret)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    # Crear URI y QR base64
-    uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user.email, issuer_name="ChatSecureApp")
-    qr_img = qrcode.make(uri)
-    buf = io.BytesIO()
-    qr_img.save(buf, format="PNG")
-    qr_base64 = base64.b64encode(buf.getvalue()).decode()
+        # Crear URI y QR base64
+        uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user.email, issuer_name="ChatSecureApp")
+        qr_img = qrcode.make(uri)
+        buf = io.BytesIO()
+        qr_img.save(buf, format="PNG")
+        qr_base64 = base64.b64encode(buf.getvalue()).decode()
 
-    return {
-        "email": new_user.email,
-        "totp_secret": totp_secret,
-        "qr_code_base64": qr_base64
-    }
+        return {
+            "email": new_user.email,
+            "totp_secret": totp_secret,
+            "qr_code_base64": qr_base64
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 
 @router.post("/login", response_model=Token)

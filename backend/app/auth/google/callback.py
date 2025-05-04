@@ -14,7 +14,7 @@ router = APIRouter()
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     token = await oauth.google.authorize_access_token(request)
     
-    #  CORRECTO: solo pasa `token=`
+    # Obtener la información del usuario desde Google
     user_info = await oauth.google.userinfo(token=token)
 
     if not user_info:
@@ -24,18 +24,39 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=400, detail="Email not found in Google response")
 
+    # Buscar si el usuario ya existe en la base de datos
     user = db.query(User).filter_by(email=email).first()
 
-    if not user:
+    if user:
+        # Si el usuario ya existe y es una cuenta de Google, solo autenticamos
+        if user.is_google_account:
+            # Usuario ya autenticado con Google, generar los tokens de acceso y refresh
+            access_token = create_access_token({"sub": email})
+            refresh_token = create_refresh_token({"sub": email})
+
+            # Redirigir al frontend con los tokens
+            return RedirectResponse(
+                url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
+            )
+        else:
+            # Si el usuario ya existe y no es una cuenta de Google, asociamos la cuenta a Google
+            user.is_google_account = True
+            db.commit()
+            db.refresh(user)
+    else:
+        # Si no existe, crear una nueva cuenta de usuario con is_google_account como True
         totp_secret = pyotp.random_base32()
-        user = User(email=email, hashed_password="", totp_secret=totp_secret)
+        user = User(email=email, hashed_password="", totp_secret=totp_secret, is_google_account=True)
         db.add(user)
         db.commit()
         db.refresh(user)
 
+    # Crear tokens JWT
     access_token = create_access_token({"sub": email})
     refresh_token = create_refresh_token({"sub": email})
 
+    # Redirigir al frontend con los tokens
     return RedirectResponse(
         url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
     )
+

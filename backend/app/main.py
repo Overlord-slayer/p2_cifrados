@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.routers import auth
 from fastapi.middleware.cors import CORSMiddleware
-from app.middleware.logger import LoggingMiddleware
+from app.middleware.logger import RequestLoggerMiddleware
 from app.auth.google.routes import router as google_login_router
 from app.auth.google.callback import router as google_callback_router
 from starlette.middleware.sessions import SessionMiddleware
@@ -25,4 +25,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(LoggingMiddleware)
+app.add_middleware(RequestLoggerMiddleware)

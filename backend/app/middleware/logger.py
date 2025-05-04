@@ -1,25 +1,31 @@
-# app/middleware/logger.py
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
 import logging
-import time
 
-logger = logging.getLogger("uvicorn.access")
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
-class LoggingMiddleware(BaseHTTPMiddleware):
+class RequestLoggerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        start_time = time.time()
-        body = await request.body()
+        # Lógica antes de pasar al siguiente middleware o al endpoint
+        logger.info(f"Request: {request.method} {request.url} - Headers: {dict(request.headers)}")
 
-        logger.info(
-            f"📥 {request.method} {request.url.path} | Body: {body.decode(errors='ignore')}"
-        )
+        try:
+            # Llamamos al siguiente middleware o endpoint
+            response = await call_next(request)
 
-        response = await call_next(request)
-
-        duration = round((time.time() - start_time) * 1000)
-        logger.info(
-            f"📤 {request.method} {request.url.path} completed in {duration}ms with status {response.status_code}"
-        )
-
-        return response
+            # Lógica después de obtener la respuesta
+            logger.info(f"Response: {response.status_code} for {request.method} {request.url}")
+            
+            # Aquí puedes agregar más detalles si lo necesitas
+            return response
+        except Exception as e:
+            # Manejo de excepciones: si algo falla en el proceso, logueamos el error
+            logger.error(f"Error processing request {request.method} {request.url} - {str(e)}")
+            raise e  # Volver a lanzar la excepción para que FastAPI la maneje correctamente

@@ -1,7 +1,15 @@
-from fastapi import APIRouter, Request
+import base64
+from io import BytesIO
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+import pyotp
+import qrcode
 from app.auth.google.oauth2 import oauth  # renómbralo a oauth_config.py
 import os
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session  
+from app.db.db import get_db
+from app.model.models import User
 
 load_dotenv()
 
