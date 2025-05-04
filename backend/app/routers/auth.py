@@ -1,11 +1,20 @@
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Header
 from sqlalchemy.orm import Session
-from app.schemas import UserCreate, UserOut, Token, UserLogin
-from app.models import User
-from app.db import SessionLocal
-from app.auth.utils import get_password_hash, verify_password
-from app.auth.jwt import create_access_token
-from app.auth.totp import generate_totp_secret, verify_totp_token
+from app.schemas.schemas import UserCreate, UserOut, Token, UserLogin, SignupResponse
+from app.model.models import User
+from app.db.db import SessionLocal
+from app.auth.utils import verify_password
+from app.auth.jwt import create_access_token, create_refresh_token, decode_token
+from app.auth.totp import verify_totp_token
+from app.auth.dependencies import get_current_user
+import pyotp
+import qrcode
+import io
+import base64
+# from app.utils.logging_route import LoggingRoute
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -15,25 +24,35 @@ def get_db():
         yield db
     finally:
         db.close()
-
-@router.post("/signup", response_model=UserOut)
-def signup(user_data: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter_by(email=user_data.email).first()
-    if existing:
+    
+@router.post("/signup", response_model=SignupResponse)
+def signup(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    secret = generate_totp_secret()
-    user = User(
-        email=user_data.email,
-        hashed_password=get_password_hash(user_data.password),
-        totp_secret=secret,
-    )
-    db.add(user)
+    hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
+    totp_secret = pyotp.random_base32()
+    new_user = User(email=user.email, hashed_password=hashed_pw, totp_secret=totp_secret)
+    db.add(new_user)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(new_user)
 
-@router.post("/signin", response_model=Token)
+    # Crear URI y QR base64
+    uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user.email, issuer_name="ChatSecureApp")
+    qr_img = qrcode.make(uri)
+    buf = io.BytesIO()
+    qr_img.save(buf, format="PNG")
+    qr_base64 = base64.b64encode(buf.getvalue()).decode()
+
+    return {
+        "email": new_user.email,
+        "totp_secret": totp_secret,
+        "qr_code_base64": qr_base64
+    }
+
+
+@router.post("/login", response_model=Token)
 def signin(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(email=login_data.email).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
@@ -42,5 +61,57 @@ def signin(login_data: UserLogin, db: Session = Depends(get_db)):
     if not verify_totp_token(user.totp_secret, login_data.totp_code):
         raise HTTPException(status_code=401, detail="Invalid 2FA code")
 
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    # Crear tokens
+    access_token = create_access_token(
+        {"sub": user.email},
+        scope="user"
+    )
+    refresh_token = create_refresh_token({"sub": user.email})
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token_endpoint(
+    refresh_token: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Recibe un refresh token válido en el header y devuelve nuevos tokens de acceso y refresh.
+
+    Headers:
+        refresh_token: str
+
+    Returns:
+        dict: Nuevos access_token y refresh_token
+    """
+    payload = decode_token(refresh_token, expected_type="refresh")
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    email = payload.get("sub")
+    user = db.query(User).filter_by(email=email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_access_token = create_access_token({"sub": email}, scope="user")
+    new_refresh_token = create_refresh_token({"sub": email})
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }
+
+
+@router.get("/me")
+def get_me(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter_by(email=current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"email": user.email}

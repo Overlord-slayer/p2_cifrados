@@ -4,6 +4,13 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+# schemas.py
+class SignupResponse(BaseModel):
+    email: EmailStr
+    totp_secret: str
+    qr_code_base64: str
+
+
 class UserOut(BaseModel):
     id: int
     email: EmailStr
@@ -15,6 +22,7 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: str
 
 class TokenData(BaseModel):
     email: str | None = None
