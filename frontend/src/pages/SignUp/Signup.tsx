@@ -1,30 +1,11 @@
-import React, { JSX, useState } from "react";
+import React, { JSX, useState, useEffect } from "react";
 import { signup } from "@api/api";
 import { validateEmail } from "@constants/validatros";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./Signup.module.css";
 import Toast from "@components/Toast/Toast";
+import { AxiosError } from "axios";
 
-/**
- * Componente `Signup`.
- *
- * Este componente gestiona el registro de nuevos usuarios. Permite al usuario ingresar su correo electrónico
- * y contraseña, y tras registrarse exitosamente, le muestra un código QR para configurar la autenticación en dos pasos (TOTP).
- *
- * Características:
- * - Validaciones de entrada para correo y contraseña.
- * - Llamada al backend para registrar el usuario.
- * - Muestra código QR y clave secreta TOTP para apps como Google Authenticator.
- * - Muestra mensajes emergentes (`Toast`) para éxito o error.
- *
- * @component
- * @returns {JSX.Element} Vista de formulario de registro o código TOTP tras registro exitoso.
- *
- * @example
- * ```tsx
- * <Signup />
- * ```
- */
 export default function Signup(): JSX.Element {
   // Estados para los campos de entrada
   const [email, setEmail] = useState<string>("");
@@ -40,18 +21,23 @@ export default function Signup(): JSX.Element {
   const [toastType, setToastType] = useState<"success" | "error">("success");
 
   const navigate = useNavigate();
+  const location = useLocation(); // Para acceder a los parámetros de la URL
+
+  // Verificar si el parámetro google_authenticated está presente en la URL
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.has("google_authenticated")) {
+      setToastMessage("Este correo ya está autenticado con Google.");
+      setToastType("error");
+    }
+  }, [location]);
 
   /**
    * Maneja el flujo de registro del usuario.
-   *
-   * Realiza las siguientes acciones:
-   * - Verifica que los campos estén completos y válidos.
-   * - Llama a la API `signup` para registrar al usuario.
-   * - Si tiene éxito, muestra un código QR y una clave TOTP.
-   * - Si falla, muestra un mensaje de error mediante `Toast`.
    */
+
   const handleSignup = async () => {
-    console.log("Intentando registrar usuario:", { email, password });
+    console.log("Datos que se envían al backend:", { email, password });
 
     // Validaciones básicas
     if (!email || !password) {
@@ -74,17 +60,39 @@ export default function Signup(): JSX.Element {
     try {
       const res = await signup(email, password);
       console.log("Signup OK:", res.data);
-
       setQrCode(res.data.qr_code_base64);
       setTotpSecret(res.data.totp_secret);
       setRegistered(true);
       setToastMessage("Registro exitoso.");
       setToastType("success");
-    } catch (e) {
+    } catch (e: unknown) {
+      // Usar `unknown` en lugar de `AxiosError`
       console.error("Error durante el registro:", e);
-      setToastMessage("Error durante el registro. Inténtalo de nuevo.");
-      setToastType("error");
+
+      // Asegurarse de que `e` es un AxiosError
+      if (e instanceof AxiosError) {
+        // Verificar si es una instancia de AxiosError
+        // Verificar si el error es por un correo ya registrado
+        if (e?.response?.data?.detail === "Email already registered") {
+          setToastMessage(
+            "Este correo electrónico ya está registrado. ¿Quieres iniciar sesión?"
+          );
+          setToastType("error");
+        } else {
+          setToastMessage("Error durante el registro. Inténtalo de nuevo.");
+          setToastType("error");
+        }
+      } else {
+        // Si el error no es un AxiosError, manejamos el error genérico
+        setToastMessage("Error desconocido. Inténtalo de nuevo.");
+        setToastType("error");
+      }
     }
+  };
+
+  // Redirigir al usuario al flujo de Google OAuth
+  const handleGoogleSignup = () => {
+    window.location.href = "http://localhost:8000/auth/google/login";
   };
 
   return (
@@ -108,6 +116,14 @@ export default function Signup(): JSX.Element {
             />
             <button onClick={handleSignup} className={styles.button}>
               Crear cuenta
+            </button>
+
+            {/* Botón para registrar con Google */}
+            <button
+              onClick={handleGoogleSignup}
+              className={`${styles.button} ${styles.googleButton}`}
+            >
+              Registrarse con Google
             </button>
           </div>
         ) : (

@@ -15,4 +15,3 @@ class User(Base):
     is_google_account = Column(Boolean, default=False)     # Indica si el usuario usó Google
     email_verified = Column(Boolean, default=False)        # Por si quieres manejar verificación
     totp_verified = Column(Boolean, default=False)         # True después de escanear QR
-

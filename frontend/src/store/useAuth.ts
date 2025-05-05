@@ -57,5 +57,6 @@ export const useAuth = create<AuthState>((set) => ({
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     set({ accessToken: null, refreshToken: null });
+    localStorage.clear(); // Elimina todos los datos de localStorage
   },
 }));

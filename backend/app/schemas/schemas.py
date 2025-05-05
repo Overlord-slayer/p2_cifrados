@@ -16,8 +16,9 @@ class UserOut(BaseModel):
     email: EmailStr
     is_active: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True  # <- Nuevo en Pydantic v2
+    }
 
 class Token(BaseModel):
     access_token: str

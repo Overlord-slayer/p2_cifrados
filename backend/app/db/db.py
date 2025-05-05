@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -45,7 +45,7 @@ def create_tables():
 def check_connection(engine):
     try:
         with engine.connect() as connection:
-            connection.execute("SELECT 1")
+            connection.execute(text("SELECT 1"))  # <- Aquí el cambio
         print("Conexión a la base de datos exitosa.")
     except SQLAlchemyError as e:
         print(f"Error al conectar a la base de datos: {e}")
