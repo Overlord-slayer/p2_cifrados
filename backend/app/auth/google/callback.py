@@ -8,8 +8,7 @@ from fastapi.responses import RedirectResponse
 
 import pyotp
 
-router = APIRouter()
-
+router = APIRouter(prefix="/auth", tags=["google"])
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):

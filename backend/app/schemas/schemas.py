@@ -1,3 +1,4 @@
+from typing import *
 from pydantic import BaseModel, EmailStr
 
 class UserCreate(BaseModel):
