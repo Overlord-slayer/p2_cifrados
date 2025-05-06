@@ -12,7 +12,6 @@ frontend/.next/
 frontend/.env
 
 # === Imágenes o salidas temporales ===
-*.png
 *.log
 
 # === Editor y sistema ===
