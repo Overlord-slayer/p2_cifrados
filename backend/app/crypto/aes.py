@@ -4,6 +4,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import os
 
+# --- AES Generate 256 bit Key ---
 def aes_key():
 	return os.urandom(32)
 
