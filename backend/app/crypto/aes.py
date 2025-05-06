@@ -12,25 +12,19 @@ def aes_key():
 def aes_encrypt(message: bytes, key: bytes):
 	iv = os.urandom(12)  # Generate a random 12-byte IV
 	encryptor = Cipher(
-		algorithms.AES(key),
-		modes.GCM(iv),
-		backend=default_backend()
+		algorithms.AES(key), modes.GCM(iv), backend=default_backend()
 	).encryptor()
-	
+
 	ciphertext = encryptor.update(message) + encryptor.finalize()
-	return {
-		'ciphertext': ciphertext,
-		'iv': iv,
-		'tag': encryptor.tag
-	}
+	return {"ciphertext": ciphertext, "iv": iv, "tag": encryptor.tag}
 
 # --- AES Decryption Function (AES-GCM) ---
 def aes_decrypt(encrypted_data: dict, key: bytes):
 	decryptor = Cipher(
 		algorithms.AES(key),
-		modes.GCM(encrypted_data['iv'], encrypted_data['tag']),
-		backend=default_backend()
+		modes.GCM(encrypted_data["iv"], encrypted_data["tag"]),
+		backend=default_backend(),
 	).decryptor()
-	
-	plaintext = decryptor.update(encrypted_data['ciphertext']) + decryptor.finalize()
+
+	plaintext = decryptor.update(encrypted_data["ciphertext"]) + decryptor.finalize()
 	return plaintext

@@ -8,7 +8,6 @@ import os
 
 # from app.model.models import User
 
-
 # Cargar variables de entorno
 load_dotenv()
 
@@ -29,11 +28,15 @@ def create_database_if_not_exists():
 
 	with engine.connect() as conn:
 		# Check if the target database exists
-		result = conn.execute(text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": target_db})
+		result = conn.execute(
+			text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": target_db}
+		)
 		exists = result.scalar() is not None
 
 		if not exists:
-			conn.execute(text(f'CREATE DATABASE "{target_db}"'))  # Double quotes preserve case sensitivity
+			conn.execute(
+				text(f'CREATE DATABASE "{target_db}"')
+			)  # Double quotes preserve case sensitivity
 
 	engine.dispose()
 
@@ -45,7 +48,7 @@ def create_engine_with_error_handling():
 			pool_size=10,
 			max_overflow=20,
 			pool_timeout=30,
-			pool_recycle=3600
+			pool_recycle=3600,
 		)
 	except SQLAlchemyError as e:
 		print(f"Error al conectar a la base de datos: {e}")

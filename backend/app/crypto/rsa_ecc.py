@@ -8,9 +8,7 @@ import os
 # --- RSA Key Generation ---
 def generate_rsa_keys():
 	private_key = rsa.generate_private_key(
-		public_exponent=65537,
-		key_size=2048,
-		backend=default_backend()
+		public_exponent=65537, key_size=2048, backend=default_backend()
 	)
 	public_key = private_key.public_key()
 	return private_key, public_key
@@ -33,22 +31,19 @@ def hybrid_encrypt(message: bytes, rsa_pub_key, ecc_receiver_pub_key):
 		length=32,
 		salt=None,
 		info=b"hybrid-enc",
-		backend=default_backend()
+		backend=default_backend(),
 	).derive(shared_key)
 
 	# Encrypt message with AES-GCM
 	iv = os.urandom(12)
 	encryptor = Cipher(
-		algorithms.AES(aes_key), 
-		modes.GCM(iv), 
-		backend=default_backend()
+		algorithms.AES(aes_key), modes.GCM(iv), backend=default_backend()
 	).encryptor()
 	ciphertext = encryptor.update(message) + encryptor.finalize()
 
 	# Serialize ephemeral ECC public key
 	eph_pub_bytes = eph_priv_key.public_key().public_bytes(
-		serialization.Encoding.PEM,
-		serialization.PublicFormat.SubjectPublicKeyInfo
+		serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
 	)
 
 	# Encrypt ephemeral ECC public key using RSA
@@ -57,30 +52,32 @@ def hybrid_encrypt(message: bytes, rsa_pub_key, ecc_receiver_pub_key):
 		padding.OAEP(
 			mgf=padding.MGF1(algorithm=hashes.SHA256()),
 			algorithm=hashes.SHA256(),
-			label=None
-		)
+			label=None,
+		),
 	)
 
 	return {
-		'ciphertext': ciphertext,
-		'iv': iv,
-		'tag': encryptor.tag,
-		'encrypted_ecc_key': encrypted_ecc_key
+		"ciphertext": ciphertext,
+		"iv": iv,
+		"tag": encryptor.tag,
+		"encrypted_ecc_key": encrypted_ecc_key,
 	}
 
 # --- Hybrid Decrypt Function ---
 def hybrid_decrypt(encrypted_data: dict, rsa_priv_key, ecc_receiver_priv_key):
 	# Decrypt ephemeral ECC public key with RSA
 	eph_pub_bytes = rsa_priv_key.decrypt(
-		encrypted_data['encrypted_ecc_key'],
+		encrypted_data["encrypted_ecc_key"],
 		padding.OAEP(
 			mgf=padding.MGF1(algorithm=hashes.SHA256()),
 			algorithm=hashes.SHA256(),
-			label=None
-		)
+			label=None,
+		),
 	)
 
-	eph_pub_key = serialization.load_pem_public_key(eph_pub_bytes, backend=default_backend())
+	eph_pub_key = serialization.load_pem_public_key(
+		eph_pub_bytes, backend=default_backend()
+	)
 
 	# Derive shared key using ECDH
 	shared_key = ecc_receiver_priv_key.exchange(ec.ECDH(), eph_pub_key)
@@ -90,15 +87,15 @@ def hybrid_decrypt(encrypted_data: dict, rsa_priv_key, ecc_receiver_priv_key):
 		length=32,
 		salt=None,
 		info=b"hybrid-enc",
-		backend=default_backend()
+		backend=default_backend(),
 	).derive(shared_key)
 
 	# Decrypt AES-GCM message
 	decryptor = Cipher(
 		algorithms.AES(aes_key),
-		modes.GCM(encrypted_data['iv'], encrypted_data['tag']),
-		backend=default_backend()
+		modes.GCM(encrypted_data["iv"], encrypted_data["tag"]),
+		backend=default_backend(),
 	).decryptor()
 
-	plaintext = decryptor.update(encrypted_data['ciphertext']) + decryptor.finalize()
+	plaintext = decryptor.update(encrypted_data["ciphertext"]) + decryptor.finalize()
 	return plaintext

@@ -3,25 +3,29 @@ import time
 import json
 
 def hash_block(block):
-	block_string = json.dumps(block, sort_keys=True).encode()  # Convert block to string and encode it
-	return hashlib.sha256(block_string).hexdigest()  # Return the SHA-256 hash of the block
+	block_string = json.dumps(
+		block, sort_keys=True
+	).encode()  # Convert block to string and encode it
+	return hashlib.sha256(
+		block_string
+	).hexdigest()  # Return the SHA-256 hash of the block
 
 def create_block(previous_hash, data):
 	return {
-		'index': 0,
-		'timestamp': time.time(),
-		'data': data,
-		'previous_hash': previous_hash,
-		'hash': ''
+		"index": 0,
+		"timestamp": time.time(),
+		"data": data,
+		"previous_hash": previous_hash,
+		"hash": "",
 	}
 
 def create_genesis_block():
 	return create_block("0", "Genesis Block")
 
 def add_block(previous_block, data):
-	block = create_block(previous_block['hash'], data)
-	block['index'] = previous_block['index'] + 1
-	block['hash'] = hash_block(block)
+	block = create_block(previous_block["hash"], data)
+	block["index"] = previous_block["index"] + 1
+	block["hash"] = hash_block(block)
 	return block
 
 class Blockchain:

@@ -18,11 +18,11 @@ app.include_router(google_callback_router)
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY"))
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # O "*" si estás probando
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+	CORSMiddleware,
+	allow_origins=["http://localhost:3000"],  # O "*" si estás probando
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
 )
 
 app.add_middleware(RequestLoggerMiddleware)
