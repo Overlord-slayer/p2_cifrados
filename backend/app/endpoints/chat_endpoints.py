@@ -6,6 +6,7 @@ from app.auth.dependencies import get_current_user
 from app.schemas.schemas import *
 
 import app.globals as globals
+from app.db.db import *
 
 load_dotenv()
 
@@ -21,6 +22,7 @@ def get_messages(user_destino: str, username: str = Depends(get_current_user)):
 
 @router.post("/messages/{user_destino}")
 def send_message(user_destino: str, message: str, username: str = Depends(get_current_user)):
+	db = get_db()
 	return {}
 
 @router.post("/transactions")
