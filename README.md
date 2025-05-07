@@ -7,8 +7,8 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 | Nombre             | Carné  | Rol                      |
 | ------------------ | ------ | ------------------------ |
 | Samuel Argueta     | 211024 | Frontend + Autenticación |
-| Alejandro Martínez | 21430  | Backend + Chat Grupal    |
-| Astrid Glauser     | 21299  | Backend + Chat P2P       |
+| Alejandro Martínez | 21430  | Backend + Chat & Crypt   |
+| Astrid Glauser     | 21299  | Backend + Frontend Chat  |
 | Dolan Raúl         | 21965  | Backend + Blockchain     |
 
 ## Funcionalidades principales
