@@ -33,4 +33,3 @@ Este proyecto es parte del curso de **Seguridad Informática** y tiene como obje
 * **Criptografía**: pyca/cryptography, PyNaCl, pyotp
 * **Blockchain**: Implementación propia en Python
 * **Contenedores**: Docker + Docker Compose
->>>>>>> 0d1e010de1938e024063c8e56932266d3237f5b3
