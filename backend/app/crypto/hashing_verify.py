@@ -1,5 +1,4 @@
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import hmac
+from cryptography.hazmat.primitives import hashes, hmac
 from cryptography.hazmat.backends import default_backend
 
 # --- Hashing Function (SHA-256) ---
