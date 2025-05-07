@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, LargeBinary
+from sqlalchemy import *
 from app.db.db import Base
+from datetime import datetime
+from sqlalchemy.orm import relationship
 
 class User(Base):
 	__tablename__ = "users"
@@ -21,3 +23,18 @@ class User(Base):
 		Boolean, default=False
 	)  # Por si quieres manejar verificación
 	totp_verified = Column(Boolean, default=False)  # True después de escanear QR
+
+class Message(Base):
+	__tablename__ = "messages"
+
+	id = Column(Integer, primary_key=True, index=True)
+	
+	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+	
+	message = Column(Text, nullable=False)
+	timestamp = Column(DateTime, default=datetime.utcnow)
+
+	# Relationships to link to User
+	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
+	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
