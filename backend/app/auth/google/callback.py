@@ -10,7 +10,7 @@ import pyotp
 
 router = APIRouter(prefix="/auth", tags=["google"])
 
-@router.get("/auth/google/callback")
+@router.get("/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
 	token = await oauth.google.authorize_access_token(request)
 

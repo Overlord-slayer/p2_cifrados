@@ -1,5 +1,3 @@
-
-
 # Chat App Backend (FastAPI + SQLAlchemy + Auth)
 
 Este proyecto es el backend de una aplicación de chat, construido con FastAPI, autenticación segura y cifrado avanzado.
@@ -103,25 +101,33 @@ Esto inicia el servidor en `http://127.0.0.1:8000`
 Ejemplo:
 
 ```
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=
 DATABASE_URL=postgresql://user:password@localhost:5432/chat_db
-SECRET_KEY=tu_clave_secreta
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-GOOGLE_CLIENT_ID=tu_id_de_google
-GOOGLE_CLIENT_SECRET=tu_secreto_de_google
+
+SECRET_KEY=
+SESSION_SECRET_KEY=
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
 ```
 
 ---
 
-## 💠 Compilar e inicializar
+## Compilar e inicializar
 
 ### Crear base de datos (si es necesario):
 
 ```bash
-alembic upgrade head
+python3 `init_db.py` # o python init_db.py en Windows
 ```
 
-> O usa `init_db.py` si tienes un script para creación manual.
+Esto simplemente creara las tablas a la base de datos.
+
+NOTA: ANTES DE HACER ESTO, SE DEBE LEVANTAR EL DOCKER COMPOSE O BIEN TENER INSTALDAO PGADMIN CON POSTGRES.
+ASI MISMO, SE DEBE CREAR LA BASE DE DATOS CON NOMBRE chat_app PARA PODER REALIZAR LA CREACION E INSERCION DE DATOS.
 
 ---
 
