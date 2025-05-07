@@ -16,15 +16,6 @@ router = APIRouter(prefix="", tags=["chat"])
 def get_public_key(username: str = Depends(get_current_user)):
 	return {}
 
-@router.get("/messages/{user_origen}/{user_destino}", response_model=List[str])
-def get_messages(user_destino: str, username: str = Depends(get_current_user)):
-	return {}
-
-@router.post("/messages/{user_destino}")
-def send_message(user_destino: str, message: str, username: str = Depends(get_current_user)):
-	db = get_db()
-	return {}
-
 @router.post("/transactions")
 def save_transaction(user_destino: str, message: str, username: str = Depends(get_current_user)):
 	globals.block_chain.add_transaction(username, user_destino, message)
