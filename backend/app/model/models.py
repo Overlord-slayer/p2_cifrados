@@ -1,3 +1,4 @@
+from sqlalchemy.orm import Session
 from sqlalchemy import *
 from app.db.db import Base
 from datetime import datetime
@@ -68,3 +69,15 @@ class GroupMessage(Base):
 
 	group = relationship("Group", backref="messages")
 	sender = relationship("User", backref="group_messages")
+
+def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str):
+	msg = P2P_Message(sender_id=sender_id, receiver_id=receiver_id, message=message)
+	db.add(msg)
+	db.commit()
+	db.refresh(msg)
+	return msg
+
+def get_p2p_messages_by_user(db: Session, user_id: int):
+	return db.query(P2P_Message).filter(
+		(P2P_Message.sender_id == user_id) | (P2P_Message.receiver_id == user_id)
+	).order_by(P2P_Message.timestamp.desc()).all()
