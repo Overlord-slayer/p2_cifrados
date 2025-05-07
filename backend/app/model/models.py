@@ -70,6 +70,10 @@ class GroupMessage(Base):
 	group = relationship("Group", backref="messages")
 	sender = relationship("User", backref="group_messages")
 
+def get_user_id_by_email(db: Session, email: str) -> int | None:
+	user = db.query(User).filter(User.email == email).first()
+	return user.id if user else None
+
 def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str):
 	msg = P2P_Message(sender_id=sender_id, receiver_id=receiver_id, message=message)
 	db.add(msg)
@@ -89,8 +93,8 @@ def add_user_to_group(db: Session, user_id: int, group_id: int):
 	db.refresh(membership)
 	return membership
 
-def get_groups_for_user(db: Session, user_id: int):
-	return db.query(Group).join(GroupMembership).filter(GroupMembership.user_id == user_id).all()
+def get_users_in_group(db: Session, group_id: int):
+	return db.query(User).join(GroupMembership).filter(GroupMembership.group_id == group_id).all()
 
 def send_group_message(db: Session, group_id: int, sender_id: int, message: str):
 	group_msg = GroupMessage(group_id=group_id, sender_id=sender_id, message=message)
