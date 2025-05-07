@@ -81,10 +81,8 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str
 	db.refresh(msg)
 	return msg
 
-def get_p2p_messages_by_user(db: Session, user_id: int):
-	return db.query(P2P_Message).filter(
-		(P2P_Message.sender_id == user_id) | (P2P_Message.receiver_id == user_id)
-	).order_by(P2P_Message.timestamp.desc()).all()
+def get_p2p_messages_by_user(db: Session, sender_id: int, receiver_id: int):
+	return db.query(P2P_Message).filter((P2P_Message.sender_id == sender_id) | (P2P_Message.receiver_id == receiver_id)).order_by(P2P_Message.timestamp.desc()).all()
 
 def add_user_to_group(db: Session, user_id: int, group_id: int):
 	membership = GroupMembership(user_id=user_id, group_id=group_id)
