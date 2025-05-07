@@ -1,6 +1,6 @@
 # Proyecto 2 - Cifrados Seguros
 
-Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como objetivo implementar una aplicación segura que integre mecanismos modernos de **autenticación**, **cifrado**, **firma digital**, **integridad de datos** y **almacenamiento seguro mediante blockchain**. La aplicación incluye funcionalidades de **chat grupal y P2P**, protegidas mediante algoritmos criptográficos.
+Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como objetivo implementar una aplicación segura que integre mecanismos modernos de **autenticación**, **cifrado**, **firma digital**, **integridad de datos** y **almacenamiento seguro mediante blockchain**. La aplicación incluye funcionalidades de **chat grupal y P2P**, protegidas mediante algoritmos criptográficos. *PARA MAYOR DETALLE, LEER EL README DE **frontend** y **backend***.
 
 ## Integrantes
 
