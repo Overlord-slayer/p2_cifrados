@@ -11,9 +11,20 @@ from app.endpoints.chat_endpoints import router as chat_router
 
 from dotenv import load_dotenv
 
+import app.globals as globals
+
 load_dotenv()
 
 app = FastAPI()
+
+@app.on_event("startup")
+async def on_startup():
+	print("App is starting up...")
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+	print("App is shutting down...")
 
 app.include_router(chat_router)
 app.include_router(auth.router)

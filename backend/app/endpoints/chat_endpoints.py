@@ -4,26 +4,31 @@ from dotenv import load_dotenv
 
 from app.schemas.schemas import *
 
+import app.globals as globals
+
+from app.auth.dependencies import get_current_user
+
 load_dotenv()
 
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/users/{user}/key")
-def get_public_key(user: str):
+def get_public_key(username: str = Depends(get_current_user)):
 	return {}
 
 @router.get("/messages/{user_origen}/{user_destino}", response_model=List[str])
-def get_messages(user_origen: str, user_destino: str):
+def get_messages(user_destino: str, username: str = Depends(get_current_user)):
 	return {}
 
 @router.post("/messages/{user_destino}")
-def send_message(user_destino: str, message: str):
+def send_message(user_destino: str, message: str, username: str = Depends(get_current_user)):
 	return {}
 
 @router.post("/transactions")
-def save_transaction():
-	return {}
+def save_transaction(user_destino: str, message: str, username: str = Depends(get_current_user)):
+	globals.block_chain.add_transaction(username, user_destino, message)
+	return { }
 
 @router.get("/transactions")
-def get_transactions():
-	return {}
+def get_transactions(username: str = Depends(get_current_user)):
+	return { "transactions" : globals.block_chain.get_all_transactions() }
