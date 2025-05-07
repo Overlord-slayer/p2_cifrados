@@ -1,13 +1,6 @@
-
-from pydantic import BaseModel
 from time import time
 import hashlib
 import json
-
-class Transaction(BaseModel):
-	sender: str
-	receiver: str
-	byte_data: bytes
 
 class Blockchain:
 	def __init__(self):

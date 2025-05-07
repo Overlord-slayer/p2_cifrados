@@ -4,7 +4,7 @@ from fastapi import Header
 from sqlalchemy.orm import Session
 from app.schemas.schemas import UserCreate, UserOut, Token, UserLogin, SignupResponse
 from app.model.models import User
-from app.db.db import SessionLocal, get_db
+from app.db.db import get_db
 from app.auth.utils import verify_password
 from app.auth.jwt import create_access_token, create_refresh_token, decode_token
 from app.auth.totp import verify_totp_token

@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends
 from dotenv import load_dotenv
+from typing import *
 
+from app.auth.dependencies import get_current_user
 from app.schemas.schemas import *
 
 import app.globals as globals
-
-from app.auth.dependencies import get_current_user
 
 load_dotenv()
 
