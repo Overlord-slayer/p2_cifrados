@@ -8,55 +8,61 @@ from fastapi.responses import RedirectResponse
 
 import pyotp
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["google"])
 
 @router.get("/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
-    token = await oauth.google.authorize_access_token(request)
-    
-    # Obtener la información del usuario desde Google
-    user_info = await oauth.google.userinfo(token=token)
+	token = await oauth.google.authorize_access_token(request)
 
-    if not user_info:
-        raise HTTPException(status_code=400, detail="Google authentication failed")
+	# Obtener la información del usuario desde Google
+	user_info = await oauth.google.userinfo(token=token)
 
-    email = user_info.get("email")
-    if not email:
-        raise HTTPException(status_code=400, detail="Email not found in Google response")
+	if not user_info:
+		raise HTTPException(status_code=400, detail="Google authentication failed")
 
-    # Buscar si el usuario ya existe en la base de datos
-    user = db.query(User).filter_by(email=email).first()
+	email = user_info.get("email")
+	if not email:
+		raise HTTPException(
+			status_code=400, detail="Email not found in Google response"
+		)
 
-    if user:
-        # Si el usuario ya existe y es una cuenta de Google, solo autenticamos
-        if user.is_google_account:
-            # Usuario ya autenticado con Google, generar los tokens de acceso y refresh
-            access_token = create_access_token({"sub": email})
-            refresh_token = create_refresh_token({"sub": email})
+	# Buscar si el usuario ya existe en la base de datos
+	user = db.query(User).filter_by(email=email).first()
 
-            # Redirigir al frontend con los tokens
-            return RedirectResponse(
-                url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
-            )
-        else:
-            # Si el usuario ya existe y no es una cuenta de Google, asociamos la cuenta a Google
-            user.is_google_account = True
-            db.commit()
-            db.refresh(user)
-    else:
-        # Si no existe, crear una nueva cuenta de usuario con is_google_account como True
-        totp_secret = pyotp.random_base32()
-        user = User(email=email, hashed_password="", totp_secret=totp_secret, is_google_account=True)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+	if user:
+		# Si el usuario ya existe y es una cuenta de Google, solo autenticamos
+		if user.is_google_account:
+			# Usuario ya autenticado con Google, generar los tokens de acceso y refresh
+			access_token = create_access_token({"sub": email})
+			refresh_token = create_refresh_token({"sub": email})
 
-    # Crear tokens JWT
-    access_token = create_access_token({"sub": email})
-    refresh_token = create_refresh_token({"sub": email})
+			# Redirigir al frontend con los tokens
+			return RedirectResponse(
+				url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
+			)
+		else:
+			# Si el usuario ya existe y no es una cuenta de Google, asociamos la cuenta a Google
+			user.is_google_account = True
+			db.commit()
+			db.refresh(user)
+	else:
+		# Si no existe, crear una nueva cuenta de usuario con is_google_account como True
+		totp_secret = pyotp.random_base32()
+		user = User(
+			email=email,
+			hashed_password="",
+			totp_secret=totp_secret,
+			is_google_account=True,
+		)
+		db.add(user)
+		db.commit()
+		db.refresh(user)
 
-    # Redirigir al frontend con los tokens
-    return RedirectResponse(
-        url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
-    )
+	# Crear tokens JWT
+	access_token = create_access_token({"sub": email})
+	refresh_token = create_refresh_token({"sub": email})
 
+	# Redirigir al frontend con los tokens
+	return RedirectResponse(
+		url=f"http://localhost:3000/oauth-callback?access_token={access_token}&refresh_token={refresh_token}&totp_enabled={bool(user.totp_secret)}"
+	)
