@@ -8,34 +8,30 @@ import MessageInput from '../../components/chat/MessageInput'
 import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
+import './ChatPage.css'
 
 export default function ChatPage() {
-  // “me” es tu propio identificador (token/email) que obtienes del store
   const me = useAuth(state => state.accessToken)!
   const [contacts, setContacts] = useState<{ email: string }[]>([])
-  const [active, setActive]     = useState<string>('')
-  const [sign, setSign]         = useState<boolean>(false)
+  const [active, setActive] = useState<string>('')
+  const [sign, setSign] = useState<boolean>(false)
 
-  // Zustand store para mensajes
-  const messages    = useChatStore(state => state.messages)
+  const messages = useChatStore(state => state.messages)
   const setMessages = useChatStore(state => state.setMessages)
 
-  // 1) Carga lista de usuarios/contactos
   useEffect(() => {
     api.get('/users')
-       .then(res => setContacts(res.data))
-       .catch(err => console.error('Error fetching users:', err))
+      .then(res => setContacts(res.data))
+      .catch(err => console.error('Error fetching users:', err))
   }, [])
 
-  // 2) Carga mensajes cuando cambias de contacto
   useEffect(() => {
     if (!active) return
     api.get(`/messages/${me}/${active}`)
-       .then(res => setMessages(res.data))
-       .catch(err => console.error('Error fetching messages:', err))
+      .then(res => setMessages(res.data))
+      .catch(err => console.error('Error fetching messages:', err))
   }, [active, me, setMessages])
 
-  // 3) Función para enviar mensaje (y opcionalmente firmarlo)
   const send = async (text: string) => {
     try {
       await api.post(`/messages/${active}`, { message: text, sign })
@@ -47,21 +43,15 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar de contactos */}
-      <Sidebar 
-        contacts={contacts} 
-        active={active} 
-        onSelect={setActive} 
-      />
+    <div className="chat-container">
+      <Sidebar contacts={contacts} active={active} onSelect={setActive} />
 
-      {/* Panel principal de chat */}
-      <div className="flex-1 flex flex-col bg-gray-900 text-white">
-        <header className="p-4 text-2xl">
-          {active ? `Chat con ${active}` : 'Selecciona un contacto'}
+      <div className="chat-panel">
+        <header className="chat-header">
+          <span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
         </header>
 
-        <main className="flex-1 overflow-auto p-4">
+        <main className="chat-messages">
           {messages.map(msg => (
             <MessageBubble
               key={`${msg.timestamp}-${msg.sender_id}`}
@@ -71,10 +61,7 @@ export default function ChatPage() {
           ))}
         </main>
 
-        {/* Toggle para activar/desactivar firma */}
         <SignToggle enabled={sign} onToggle={setSign} />
-
-        {/* Input para escribir y enviar nuevos mensajes */}
         <MessageInput onSend={send} />
       </div>
     </div>

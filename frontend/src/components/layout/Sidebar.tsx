@@ -1,6 +1,7 @@
 // src/components/layout/Sidebar.tsx
 
 import React from 'react'
+import './Sidebar.css'
 
 interface Props {
   contacts: { email: string }[]
@@ -10,15 +11,13 @@ interface Props {
 
 export default function Sidebar({ contacts, active, onSelect }: Props) {
   return (
-    <aside className="w-1/4 bg-gray-800 text-white p-4">
-      <h2 className="mb-4 text-xl font-semibold">Contacts</h2>
+    <aside className="sidebar">
+      <h2 className="sidebar-title">Contacts</h2>
       {contacts.map(c => (
         <div
           key={c.email}
           onClick={() => onSelect(c.email)}
-          className={`cursor-pointer p-2 rounded ${
-            active === c.email ? 'bg-gray-700' : 'hover:bg-gray-700'
-          }`}
+          className={`sidebar-contact ${active === c.email ? 'active' : ''}`}
         >
           {c.email}
         </div>
