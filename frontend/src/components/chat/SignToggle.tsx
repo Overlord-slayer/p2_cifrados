@@ -1,6 +1,8 @@
 // src/components/chat/SignToggle.tsx
+
 import React from 'react'
 import { HiOutlinePencilAlt } from 'react-icons/hi'
+import './SignToggle.css'
 
 interface Props {
   enabled: boolean
@@ -9,16 +11,16 @@ interface Props {
 
 export default function SignToggle({ enabled, onToggle }: Props) {
   return (
-    <div className="flex items-center p-4 bg-gray-900 text-white">
+    <div className="toggle-container">
       <input
         id="sign-toggle"
         type="checkbox"
         checked={enabled}
         onChange={e => onToggle(e.target.checked)}
-        className="mr-2"
+        className="toggle-checkbox"
       />
-      <label htmlFor="sign-toggle" className="flex items-center cursor-pointer">
-        <HiOutlinePencilAlt className="w-5 h-5 mr-1" />
+      <label htmlFor="sign-toggle" className="toggle-label">
+        <HiOutlinePencilAlt className="toggle-icon" />
         Sign Message
       </label>
     </div>
