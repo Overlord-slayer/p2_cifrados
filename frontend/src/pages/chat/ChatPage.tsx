@@ -44,7 +44,9 @@ export default function ChatPage() {
 
   return (
     <div className="chat-container">
-      <Sidebar contacts={contacts} active={active} onSelect={setActive} />
+      <aside className="chat-sidebar">
+        <Sidebar contacts={contacts} active={active} onSelect={setActive} />
+      </aside>
 
       <div className="chat-panel">
         <header className="chat-header">
@@ -61,8 +63,10 @@ export default function ChatPage() {
           ))}
         </main>
 
-        <SignToggle enabled={sign} onToggle={setSign} />
-        <MessageInput onSend={send} />
+        <div className="chat-footer">
+          <SignToggle enabled={sign} onToggle={setSign} />
+          <MessageInput onSend={send} />
+        </div>
       </div>
     </div>
   )

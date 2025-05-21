@@ -1,6 +1,5 @@
-// src/components/layout/Sidebar.tsx
-
 import React from 'react'
+import { HiUsers, HiOutlineUser, HiOutlineUsers } from 'react-icons/hi'
 import './Sidebar.css'
 
 interface Props {
@@ -10,18 +9,33 @@ interface Props {
 }
 
 export default function Sidebar({ contacts, active, onSelect }: Props) {
+  // Ponemos 'Group Chat' al principio de la lista
+  const items = [{ email: 'Group Chat' }, ...contacts]
+
   return (
     <aside className="sidebar">
-      <h2 className="sidebar-title">Contacts</h2>
-      {contacts.map(c => (
-        <div
-          key={c.email}
-          onClick={() => onSelect(c.email)}
-          className={`sidebar-contact ${active === c.email ? 'active' : ''}`}
-        >
-          {c.email}
-        </div>
-      ))}
+      <h2 className="sidebar-title">
+        <HiUsers className="sidebar-icon" />
+        Contacts
+      </h2>
+      <div className="contact-list">
+        {items.map(c => {
+          const isActive = c.email === active
+          const Icon = c.email === 'Group Chat' ? HiOutlineUsers : HiOutlineUser
+
+          return (
+            <div
+              key={c.email}
+              className={`contact-item ${isActive ? 'active' : ''}`}
+              onClick={() => onSelect(c.email)}
+            >
+              <Icon className="contact-icon" />
+              <span className="contact-label">{c.email}</span>
+            </div>
+          )
+        })}
+      </div>
     </aside>
   )
 }
+
