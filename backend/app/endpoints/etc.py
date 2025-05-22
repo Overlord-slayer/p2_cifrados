@@ -15,7 +15,7 @@ load_dotenv()
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/users")
-def get_public_key(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_users(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	users = db.query(User).all()
 	emails = [{"email": user.email} for user in users]
 	return emails

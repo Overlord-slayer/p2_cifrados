@@ -22,7 +22,7 @@ export default function ChatPage() {
 	useEffect(() => {
 		api.get('/users', {
 			headers: {
-			Authorization: `Bearer ${me}`
+				Authorization: `Bearer ${me}`
 			}
 		})
 		.then(res => setContacts(res.data))
@@ -33,7 +33,7 @@ export default function ChatPage() {
 		if (!active) return
 		api.get(`/messages/${me}/${active}`, {
 			headers: {
-			Authorization: `Bearer ${me}`
+				Authorization: `Bearer ${me}`
 			}
 		})
 		.then(res => setMessages(res.data))
@@ -42,12 +42,19 @@ export default function ChatPage() {
 
 	const send = async (text: string) => {
 		try {
-			await api.post(`/messages/${active}`, { message: text, sign }, {
+			await api.post(`/messages/${active}`, {
+				message: text,
+				signed: sign
+			}, {
 				headers: {
-				Authorization: `Bearer ${me}`
+					Authorization: `Bearer ${me}`
 				}
 			})
-			const res = await api.get(`/messages/${me}/${active}`)
+			const res = await api.get(`/messages/${me}/${active}`, {
+				headers: {
+					Authorization: `Bearer ${me}`
+				}
+			})
 			setMessages(res.data)
 		} catch (err) {
 			console.error('Error sending message:', err)
