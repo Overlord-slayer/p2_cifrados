@@ -3,18 +3,18 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import threading
 import os
 
 DATA_FILE = "cadenas.json"  # Archivo donde se almacenará la cadena de bloques
 
 app = FastAPI()
-chain_lock = threading.Lock()
+chain_lock = threading.Lock()  # Lock para asegurar acceso seguro a la cadena en entornos concurrentes
 
 class Transaction(BaseModel):
     nombre: str
-    fecha_envio: str 
+    fecha_envio: str  
     data_enviada: Dict[str, Any]  
 
 class Block(BaseModel):
@@ -38,17 +38,17 @@ class Blockchain:
         # Crea el primer bloque de la cadena con valores por defecto
         genesis_tx = Transaction(
             nombre="genesis",
-            fecha_envio=datetime.utcnow().isoformat() + "Z",
+            fecha_envio=datetime.now(timezone.utc).isoformat(),
             data_enviada={"message": "Genesis Block"}
         )
         genesis = Block(
             index=0,
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat(),
             transaction=genesis_tx,
             previous_hash="0",
             hash=""
         )
-        # Calcula e asigna el hash del bloque génesis
+        # Calcula y asigna el hash del bloque génesis
         genesis.hash = self.hash_block(genesis)
         self.chain.append(genesis)
 
@@ -61,7 +61,7 @@ class Blockchain:
         block_data = {
             "index": block.index,
             "timestamp": block.timestamp,
-            "transaction": block.transaction.dict(),
+            "transaction": block.transaction.model_dump(),
             "previous_hash": block.previous_hash
         }
         block_string = json.dumps(block_data, sort_keys=True).encode()
@@ -73,7 +73,7 @@ class Blockchain:
             last = self.get_last_block()
             new_block = Block(
                 index=last.index + 1,
-                timestamp=datetime.utcnow().isoformat() + "Z",
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 transaction=transaction,
                 previous_hash=last.hash,
                 hash=""
@@ -97,7 +97,7 @@ class Blockchain:
     def _save_chain(self):
         # Guarda la cadena de bloques completa en un archivo JSON
         with open(DATA_FILE, 'w') as f:
-            json.dump([blk.dict() for blk in self.chain], f, indent=2)
+            json.dump([blk.model_dump() for blk in self.chain], f, indent=2)
 
     def _load_chain(self):
         # Carga la cadena de bloques desde un archivo JSON
@@ -140,4 +140,5 @@ def validate_chain():
 if __name__ == "__main__":
     # Configuración para ejecutar la API con uvicorn
     import uvicorn
-    uvicorn.run("blockchain_chat:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("blockchain:app", host="0.0.0.0", port=8000, reload=True)
+    

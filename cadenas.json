@@ -1,0 +1,15 @@
+[
+  {
+    "index": 0,
+    "timestamp": "2025-05-22T21:27:04.930133Z",
+    "transaction": {
+      "nombre": "genesis",
+      "fecha_envio": "2025-05-22T21:27:04.930133Z",
+      "data_enviada": {
+        "message": "Genesis Block"
+      }
+    },
+    "previous_hash": "0",
+    "hash": "5980bcc8281687386a0eb09a4b2551c7aae58b483b547f7d06d016aba3756b38"
+  }
+]
