@@ -45,7 +45,7 @@ export default function Login(): JSX.Element {
    */
   useEffect(() => {
     if (accessToken) {
-      navigate("/dashboard");
+      navigate("/chat");
     }
   }, [accessToken, navigate]);
 

@@ -15,6 +15,7 @@ export default function ChatPage() {
 	const [contacts, setContacts] = useState<{ email: string }[]>([])
 	const [active, setActive] = useState<string>('')
 	const [sign, setSign] = useState<boolean>(false)
+	const [is_group, setIsGroup] = useState<boolean>(false)
 
 	const messages = useChatStore(state => state.messages)
 	const setMessages = useChatStore(state => state.setMessages)

@@ -14,46 +14,72 @@ load_dotenv()
 
 router = APIRouter(prefix="", tags=["chat"])
 
+@router.get("/users")
+def api_get_users(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	users = db.query(User).all()
+	emails = [{"email": user.email} for user in users]
+	return emails
+
+@router.get("/users/{user}/key")
+def api_get_public_key(username: str = Depends(get_current_user)):
+	return {}
+
+@router.get("/users/{user}/groups")
+def api_get_users(user: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_sender = get_user_id_by_email(db, username)
+	groups = get_user_groups(db, user_sender)
+	return groups
+
+@router.post("/group-messages/create/{group_name}/", response_model=List[str])
+def api_create_group(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	group = create_group(db, group_name)
+	return group
+
+@router.post("/group-messages/{group_name}/add/{user_destino}/", response_model=List[str])
+def api_add_to_group(group_name: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_receiver = get_user_id_by_email(db, user_destino)
+
+	group_user = add_user_to_group(db, user_receiver, group_name)
+	return group_user
+
 class MessagePayload(BaseModel):
 	message: str
 	signed: bool
 
+@router.get("/group-messages/{group_name}", response_model=List[str])
+def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_sender = get_user_id_by_email(db, username)
+	if not user_sender:
+		raise HTTPException(status_code=404, detail="User not found")
+
+	messages = get_group_messages(db, group_name)
+	return messages
+
+@router.post("/group-messages/{group_name}")
+def api_send_group_message(group_name: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	sender = get_user_id_by_email(db, username)
+	if not sender:
+		raise HTTPException(status_code=404, detail="User not found")
+
+	msg = send_group_message(db, sender, group_name, payload.message)
+	return msg
+
 @router.get("/messages/{user_origen}/{user_destino}", response_model=List[str])
-def get_messages(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	if user_origen != username:
-		raise HTTPException(status_code=404, detail="User denied access")
-	if user_destino == "Group Chat":
-		user_sender = get_user_id_by_email(db, username)
-		if not user_sender:
-			raise HTTPException(status_code=404, detail="User not found")
+def api_get_messages(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_sender = get_user_id_by_email(db, username)
+	user_receiver = get_user_id_by_email(db, user_destino)
+	if not user_sender or not user_receiver:
+		raise HTTPException(status_code=404, detail="User not found")
 
-		messages = get_messages_in_group(db)
-		return messages
-
-	else:
-		user_sender = get_user_id_by_email(db, username)
-		user_receiver = get_user_id_by_email(db, user_destino)
-		if not user_sender or not user_receiver:
-			raise HTTPException(status_code=404, detail="User not found")
-
-		messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
-		return messages
+	messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
+	return messages
 
 @router.post("/messages/{user_destino}")
-def send_message(user_destino: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	if user_destino == "Group Chat":
-		sender = get_user_id_by_email(db, username)
-		if not sender:
-			raise HTTPException(status_code=404, detail="User not found")
+def api_send_message(user_destino: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	sender = get_user_id_by_email(db, username)
+	receiver = get_user_id_by_email(db, user_destino)
+	if not sender or not receiver:
+		raise HTTPException(status_code=404, detail="User not found")
 
-		msg = send_group_message(db, sender, payload.message)
-		return msg
-
-	else:
-		sender = get_user_id_by_email(db, username)
-		receiver = get_user_id_by_email(db, user_destino)
-		if not sender or not receiver:
-			raise HTTPException(status_code=404, detail="User not found")
-
-		msg = send_p2p_message(db, sender, receiver, payload.message)
-		return msg
+	msg = send_p2p_message(db, sender, receiver, payload.message)
+	return msg
