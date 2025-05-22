@@ -42,44 +42,48 @@ export default function ChatPage() {
 
 	const send = async (text: string) => {
 		try {
-		await api.post(`/messages/${active}`, { message: text, sign }, {
-			headers: {
-			Authorization: `Bearer ${me}`
-			}
-		})
-		const res = await api.get(`/messages/${me}/${active}`)
-		setMessages(res.data)
+			await api.post(`/messages/${active}`, { message: text, sign }, {
+				headers: {
+				Authorization: `Bearer ${me}`
+				}
+			})
+			const res = await api.get(`/messages/${me}/${active}`)
+			setMessages(res.data)
 		} catch (err) {
-		console.error('Error sending message:', err)
+			console.error('Error sending message:', err)
 		}
 	}
 
 	return (
 		<div className="chat-container">
-		<aside className="chat-sidebar">
-			<Sidebar contacts={contacts} active={active} onSelect={setActive} />
-		</aside>
+			<aside className="chat-sidebar">
+				<Sidebar contacts={contacts} active={active} onSelect={setActive} />
+			</aside>
 
-		<div className="chat-panel">
-			<header className="chat-header">
-			<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
-			</header>
+			<div className="chat-panel">
+				<header className="chat-header">
+				<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
+				</header>
 
-			<main className="chat-messages">
-			{messages.map(msg => (
-				<MessageBubble
-				key={`${msg.timestamp}-${msg.sender_id}`}
-				msg={msg}
-				me={msg.sender_id !== Number(active)}
-				/>
-			))}
-			</main>
+				{active && (
+					<>
+						<main className="chat-messages">
+							{messages.map(msg => (
+								<MessageBubble
+								key={`${msg.timestamp}-${msg.sender_id}`}
+								msg={msg}
+								me={msg.sender_id !== Number(active)}
+								/>
+							))}
+						</main>
 
-			<div className="chat-footer">
-			<SignToggle enabled={sign} onToggle={setSign} />
-			<MessageInput onSend={send} />
+						<div className="chat-footer">
+							<SignToggle enabled={sign} onToggle={setSign} />
+							<MessageInput onSend={send} />
+						</div>
+					</>
+				)}
 			</div>
-		</div>
 		</div>
 	)
 }
