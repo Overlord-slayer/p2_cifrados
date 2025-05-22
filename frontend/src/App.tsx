@@ -10,10 +10,10 @@ function AppContent() {
   const hideHeader = location.pathname.startsWith("/chat");
 
   return (
-    <>
+    <div style={{height: "100%", width: "100%"}}>
       {!hideHeader && <Header />}
       <AppRoutes />
-    </>
+    </div>
   );
 }
 

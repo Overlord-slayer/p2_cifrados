@@ -3,7 +3,7 @@ import { useAuth } from "@store/useAuth";
 import { useNavigate } from "react-router-dom";
 import { RequireAuth } from "@components/RequireAuth/RequireAuth";
 import styles from "./DashBoard.module.css";
-import ChatPage from "@pages/chat/ChatPage";
+import ChatPage from "@pages/Chat/ChatPage";
 
 /**
  * Componente `Dashboard`.
