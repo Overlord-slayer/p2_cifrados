@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Signup from "@pages/SignUp/Signup";
 import Login from "@pages/Login/Login";
 import Dashboard from "@pages/dashboard/DashBoard";
+import ChatPage from "@pages/Chat/ChatPage";
 import OAuthCallback from "@pages/OAuthCallback/OAuthCallback";
 import { ProtectedRoute, PublicOnlyRoute } from "./guards/RouteGuards";
 
@@ -34,10 +35,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/oauth-callback" element={<OAuthCallback />} />
-
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

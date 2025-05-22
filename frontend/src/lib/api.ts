@@ -19,3 +19,4 @@ export const signin = (email: string, password: string, totp_code: string) =>
   API.post("/auth/login", { email, password, totp_code });
 
 export const googleLoginUrl = "http://localhost:8000/auth/google/login";
+export default API

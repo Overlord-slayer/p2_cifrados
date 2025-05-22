@@ -3,6 +3,7 @@ import { useAuth } from "@store/useAuth";
 import { useNavigate } from "react-router-dom";
 import { RequireAuth } from "@components/RequireAuth/RequireAuth";
 import styles from "./DashBoard.module.css";
+import ChatPage from "@pages/chat/ChatPage";
 
 /**
  * Componente `Dashboard`.
@@ -40,7 +41,8 @@ export default function Dashboard(): JSX.Element {
 
   return (
     <RequireAuth>
-      <div className={styles.container}>Bienvenido al Dashboard seguro</div>
+      {/* <div className={styles.container}>Bienvenido al Dashboard seguro</div> */}
+      <ChatPage />
     </RequireAuth>
   );
 }
