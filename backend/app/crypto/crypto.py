@@ -68,8 +68,8 @@ def descifrar_mensaje_grupal(data: dict, clave_simetrica: bytes) -> str:
 	mensaje_cifrado = base64.b64decode(data['mensaje'])
 	return aesgcm.decrypt(nonce, mensaje_cifrado, None).decode()
 
-def string_to_base64_bytes(texto: str) -> bytes:
-	return base64.b64encode(texto.encode('utf-8'))
+def bytes_to_str(data: bytes) -> str:
+	return base64.b64encode(data).decode('utf-8')
 
-def base64_bytes_to_string(b64_bytes: bytes) -> str:
-	return base64.b64decode(b64_bytes).decode('utf-8')
+def str_to_bytes(data_str: str) -> bytes:
+	return base64.b64decode(data_str)

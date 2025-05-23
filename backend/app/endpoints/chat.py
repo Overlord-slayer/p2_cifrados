@@ -26,20 +26,22 @@ def api_get_public_key(username: str = Depends(get_current_user)):
 
 @router.get("/users/{user}/groups")
 def api_get_users(user: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	user_sender = get_user_id_by_email(db, username)
+	user_sender = get_user_id_by_email(db, user)
 	db_groups = get_user_groups(db, user_sender)
 	groups = [{"id": group.id} for group in db_groups]
 	return groups
 
-@router.post("/group-messages/create/{group_name}/", response_model=List[str])
-def api_create_group(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	group = create_group(db, group_name)
-	return group
+class CreateGroupPayload(BaseModel):
+	name: str
 
-@router.post("/group-messages/{group_name}/add/{user_destino}/", response_model=List[str])
-def api_add_to_group(group_name: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	user_receiver = get_user_id_by_email(db, user_destino)
+@router.post("/group-messages/create")
+def api_create_group(group_name: CreateGroupPayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	group = create_group(db, group_name.name)
+	return group.id
 
+@router.post("/group-messages/{group_name}/add")
+def api_add_to_group(group_name: str, user_destino: CreateGroupPayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_receiver = get_user_id_by_email(db, user_destino.name)
 	group_user = add_user_to_group(db, user_receiver, group_name)
 	return group_user
 
@@ -47,13 +49,27 @@ class MessagePayload(BaseModel):
 	message: str
 	signed: bool
 
-@router.get("/group-messages/{group_name}", response_model=List[str])
+class MessageResponse(BaseModel):
+	sender_id: int
+	receiver_id: str
+	message: str
+	signature: Optional[str] = None
+	timestamp: datetime
+
+@router.get("/group-messages/{group_name}", response_model=List[MessageResponse])
 def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, username)
 	if not user_sender:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	messages = get_group_messages(db, group_name)
+	db_messages = get_group_messages(db, group_name)
+	messages = [{
+		"sender_id": msg.sender_id,
+		"receiver_id": msg.group_name,
+		"message": msg.message,
+		"signature": None,
+		"timestamp": msg.timestamp,
+	} for msg in db_messages]
 	return messages
 
 @router.post("/group-messages/{group_name}")

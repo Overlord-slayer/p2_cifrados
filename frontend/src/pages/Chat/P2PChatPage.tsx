@@ -12,6 +12,8 @@ import './P2PChat.css'
 
 export default function ChatPage() {
 	const me = useAuth(state => state.accessToken)!
+	const username = "martinezdl.alejandro@gmail.com"
+
 	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
 	const [sign, setSign] = useState<boolean>(false)
@@ -31,7 +33,7 @@ export default function ChatPage() {
 
 	useEffect(() => {
 		if (!active) return
-		api.get(`/messages/${me}/${active}`, {
+		api.get(`/messages/${username}/${active}`, {
 			headers: {
 				Authorization: `Bearer ${me}`
 			}
@@ -50,7 +52,7 @@ export default function ChatPage() {
 					Authorization: `Bearer ${me}`
 				}
 			})
-			const res = await api.get(`/messages/${me}/${active}`, {
+			const res = await api.get(`/messages/${username}/${active}`, {
 				headers: {
 					Authorization: `Bearer ${me}`
 				}

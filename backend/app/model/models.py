@@ -78,7 +78,7 @@ class GroupMessage(Base):
 	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
 
 def get_user_id_by_email(db: Session, email: str) -> int | None:
-	user = db.query(User).filter(User.email == email).first()
+	user = db.query(User).filter(User.email == email.strip()).first()
 	return user.id if user else None
 
 def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str):
@@ -130,7 +130,8 @@ def get_user_groups(db: Session, user_id: int):
 	)
 
 def create_group(db: Session, name: str) -> Group:
-	new_group = Group(name=name, shared_aes_key=base64_bytes_to_string(get_random_bytes(32)))
+	aes_key = bytes_to_str(get_random_bytes(32))
+	new_group = Group(id=name, shared_aes_key=aes_key)
 	db.add(new_group)
 	db.commit()
 	db.refresh(new_group)
