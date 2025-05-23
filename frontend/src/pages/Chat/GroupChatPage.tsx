@@ -8,14 +8,13 @@ import MessageInput from '../../components/chat/MessageInput'
 import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
-import './ChatPage.css'
+import './GroupChat.css'
 
-export default function ChatPage() {
+export default function GroupChatPage() {
 	const me = useAuth(state => state.accessToken)!
-	const [contacts, setContacts] = useState<{ email: string }[]>([])
+	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
 	const [sign, setSign] = useState<boolean>(false)
-	const [is_group, setIsGroup] = useState<boolean>(false)
 
 	const messages = useChatStore(state => state.messages)
 	const setMessages = useChatStore(state => state.setMessages)

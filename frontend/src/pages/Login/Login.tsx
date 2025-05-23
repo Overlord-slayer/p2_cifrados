@@ -96,7 +96,7 @@ export default function Login(): JSX.Element {
 
       setTimeout(() => {
         setToastMessage("");
-        navigate("/dashboard");
+        navigate("/chat");
       }, 1500);
     } catch (e) {
       setToastMessage(`Error al iniciar sesión. Revisa tus datos. ${e}`);

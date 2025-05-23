@@ -17,7 +17,7 @@ router = APIRouter(prefix="", tags=["chat"])
 @router.get("/users")
 def api_get_users(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	users = db.query(User).all()
-	emails = [{"email": user.email} for user in users]
+	emails = [{"id": user.email} for user in users]
 	return emails
 
 @router.get("/users/{user}/key")
@@ -27,7 +27,8 @@ def api_get_public_key(username: str = Depends(get_current_user)):
 @router.get("/users/{user}/groups")
 def api_get_users(user: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, username)
-	groups = get_user_groups(db, user_sender)
+	db_groups = get_user_groups(db, user_sender)
+	groups = [{"id": group.id} for group in db_groups]
 	return groups
 
 @router.post("/group-messages/create/{group_name}/", response_model=List[str])

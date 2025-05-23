@@ -47,7 +47,7 @@ class Group(Base):
 
 	id = Column(String, primary_key=True, index=True)
 
-	shared_aes_key = Column(String, default = base64_bytes_to_string(get_random_bytes(32)))
+	shared_aes_key = Column(String, nullable=False)
 
 	users = relationship("GroupUser", back_populates="group", cascade="all, delete-orphan")
 	messages = relationship("GroupMessage", back_populates="group", cascade="all, delete-orphan")
@@ -58,7 +58,7 @@ class GroupUser(Base):
 	id = Column(Integer, primary_key=True, index=True)
 
 	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	group_name = Column(Integer, ForeignKey("groups.id"), nullable=False)
+	group_name = Column(String, ForeignKey("groups.id"), nullable=False)
 
 	user = relationship("User", backref="group_memberships")
 	group = relationship("Group", back_populates="users")
@@ -69,7 +69,7 @@ class GroupMessage(Base):
 	id = Column(Integer, primary_key=True, index=True)
 
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	group_name  = Column(Integer, ForeignKey("groups.id"), nullable=False)
+	group_name  = Column(String, ForeignKey("groups.id"), nullable=False)
 
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
@@ -130,7 +130,7 @@ def get_user_groups(db: Session, user_id: int):
 	)
 
 def create_group(db: Session, name: str) -> Group:
-	new_group = Group(name=name)
+	new_group = Group(name=name, shared_aes_key=base64_bytes_to_string(get_random_bytes(32)))
 	db.add(new_group)
 	db.commit()
 	db.refresh(new_group)

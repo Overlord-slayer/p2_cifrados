@@ -3,14 +3,14 @@ import { HiUsers, HiOutlineUser, HiOutlineUsers } from 'react-icons/hi'
 import './Sidebar.css'
 
 interface Props {
-  contacts: { email: string }[]
+  contacts: { id: string }[]
   active: string
-  onSelect: (email: string) => void
+  onSelect: (id: string) => void
 }
 
 export default function Sidebar({ contacts, active, onSelect }: Props) {
   // Ponemos 'Group Chat' al principio de la lista
-  const items = [{ email: 'Group Chat' }, ...contacts]
+  const items = [...contacts]
 
   return (
     <aside className="sidebar">
@@ -20,17 +20,17 @@ export default function Sidebar({ contacts, active, onSelect }: Props) {
       </h2>
       <div className="contact-list">
         {items.map(c => {
-          const isActive = c.email === active
-          const Icon = c.email === 'Group Chat' ? HiOutlineUsers : HiOutlineUser
+          const isActive = c.id === active
+          const Icon = c.id === 'Group Chat' ? HiOutlineUsers : HiOutlineUser
 
           return (
             <div
-              key={c.email}
+              key={c.id}
               className={`contact-item ${isActive ? 'active' : ''}`}
-              onClick={() => onSelect(c.email)}
+              onClick={() => onSelect(c.id)}
             >
               <Icon className="contact-icon" />
-              <span className="contact-label">{c.email}</span>
+              <span className="contact-label">{c.id}</span>
             </div>
           )
         })}
