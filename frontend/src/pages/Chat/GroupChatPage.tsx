@@ -1,7 +1,7 @@
 // src/pages/chat/ChatPage.tsx
 
 import React, { useEffect, useState } from 'react'
-import MessageBubble from '../../components/chat/MessageBubble'
+import GroupMessageBubble from '../../components/chat/GroupMessageBubble'
 import SignToggle from '../../components/chat/SignToggle'
 import MessageInput from '../../components/chat/MessageInput'
 import api from '../../lib/api'
@@ -156,7 +156,7 @@ export default function GroupChatPage() {
 					<>
 						<main className="chat-messages">
 							{messages.map(msg => (
-								<MessageBubble
+								<GroupMessageBubble
 									key={`${msg.timestamp}-${msg.sender}`}
 									msg={msg}
 									me={msg.sender == getUsername()}

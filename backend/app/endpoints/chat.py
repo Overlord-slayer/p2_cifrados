@@ -68,7 +68,7 @@ def api_get_group_messages(group_name: str, username: str = Depends(get_current_
 
 	db_messages = get_group_messages(db, group_name)
 	messages = [{
-		"sender": username,
+		"sender": get_user_id_by_email(db, msg.sender_id),
 		"receiver": msg.group_name,
 		"message": msg.message,
 		"signature": None,
