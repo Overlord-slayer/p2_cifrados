@@ -157,9 +157,9 @@ export default function GroupChatPage() {
 						<main className="chat-messages">
 							{messages.map(msg => (
 								<MessageBubble
-								key={`${msg.timestamp}-${msg.sender_id}`}
-								msg={msg}
-								me={msg.sender_id != getUsername()}
+									key={`${msg.timestamp}-${msg.sender}`}
+									msg={msg}
+									me={msg.sender == getUsername()}
 								/>
 							))}
 						</main>

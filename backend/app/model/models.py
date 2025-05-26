@@ -88,8 +88,13 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str
 	db.refresh(msg)
 	return msg
 
-def get_p2p_messages_by_user(db: Session, sender_id: int, receiver_id: int):
-	return db.query(P2P_Message).filter((P2P_Message.sender_id == sender_id) | (P2P_Message.receiver_id == receiver_id)).order_by(P2P_Message.timestamp.desc()).all()
+def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
+	return db.query(P2P_Message).filter(
+		or_(
+			and_(P2P_Message.sender_id == user1_id, P2P_Message.receiver_id == user2_id),
+			and_(P2P_Message.sender_id == user2_id, P2P_Message.receiver_id == user1_id)
+		)
+	).order_by(P2P_Message.timestamp.desc()).all()
 
 def add_user_to_group(db: Session, user_id: int, group_name: int):
 	existing = db.query(GroupUser).filter_by(user_id=user_id, group_name=group_name).first()
@@ -112,12 +117,11 @@ def send_group_message(db: Session, sender_id: int, group_name: int, message: st
 	db.refresh(group_message)
 	return group_message
 
-def get_group_messages(db: Session, group_name: int, limit: int = 100):
+def get_group_messages(db: Session, group_name: int):
 	return (
 		db.query(GroupMessage)
 		.filter_by(group_name=group_name)
 		.order_by(GroupMessage.timestamp.desc())
-		.limit(limit)
 		.all()
 	)
 

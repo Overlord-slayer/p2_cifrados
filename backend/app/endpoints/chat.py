@@ -54,8 +54,8 @@ class MessagePayload(BaseModel):
 	signed: bool
 
 class MessageResponse(BaseModel):
-	sender_id: int
-	receiver_id: str
+	sender: str
+	receiver: str
 	message: str
 	signature: Optional[str] = None
 	timestamp: datetime
@@ -68,8 +68,8 @@ def api_get_group_messages(group_name: str, username: str = Depends(get_current_
 
 	db_messages = get_group_messages(db, group_name)
 	messages = [{
-		"sender_id": msg.sender_id,
-		"receiver_id": msg.group_name,
+		"sender": username,
+		"receiver": msg.group_name,
 		"message": msg.message,
 		"signature": None,
 		"timestamp": msg.timestamp,
@@ -85,14 +85,21 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 	msg = send_group_message(db, sender, group_name, payload.message)
 	return msg
 
-@router.get("/messages/{user_origen}/{user_destino}", response_model=List[str])
+@router.get("/messages/{user_origen}/{user_destino}", response_model=List[MessageResponse])
 def api_get_messages(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	user_sender = get_user_id_by_email(db, username)
+	user_sender = get_user_id_by_email(db, user_origen)
 	user_receiver = get_user_id_by_email(db, user_destino)
 	if not user_sender or not user_receiver:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
+	db_messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
+	messages = [{
+		"sender": user_origen if msg.sender_id == user_sender else user_destino,
+		"receiver": user_destino if msg.receiver_id == user_receiver else user_origen,
+		"message": msg.message,
+		"signature": None,
+		"timestamp": msg.timestamp,
+	} for msg in db_messages]
 	return messages
 
 @router.post("/messages/{user_destino}")

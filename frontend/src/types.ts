@@ -4,8 +4,8 @@
  * Representa un mensaje P2P tal como viene del backend.
  */
 export interface MessageResponse {
-  sender_id: string
-  receiver_id: string
+  sender: string
+  receiver: string
   message: string
   signature?: string
   timestamp: string  // ISO string, p.ej. "2025-05-21T17:32:00.000Z"
