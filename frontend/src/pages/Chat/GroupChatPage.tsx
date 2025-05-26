@@ -9,10 +9,10 @@ import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
 import './GroupChat.css'
 import { HiUsers, HiOutlineUsers } from 'react-icons/hi'
+import { getUsername } from '@store/userStore'
 
 export default function GroupChatPage() {
 	const me = useAuth(state => state.accessToken)!
-	const username = "martinezdl.alejandro@gmail.com"
 
 	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
@@ -34,7 +34,7 @@ export default function GroupChatPage() {
 				}
 			}).then(res =>
 				api.post(`/group-messages/${res.data}/add`, {
-					name : username
+					name : getUsername()
 				}, {
 					headers: {
 						Authorization: `Bearer ${me}`
@@ -47,7 +47,7 @@ export default function GroupChatPage() {
 	};
 
 	useEffect(() => {
-		api.get(`/users/${username}/groups`, {
+		api.get(`/users/${getUsername()}/groups`, {
 			headers: {
 				Authorization: `Bearer ${me}`
 			}
@@ -159,7 +159,7 @@ export default function GroupChatPage() {
 								<MessageBubble
 								key={`${msg.timestamp}-${msg.sender_id}`}
 								msg={msg}
-								me={msg.sender_id !== username}
+								me={msg.sender_id != getUsername()}
 								/>
 							))}
 						</main>

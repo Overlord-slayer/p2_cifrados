@@ -44,7 +44,7 @@ export default function AppRoutes() {
 				}
 			/>
 			<Route path="/oauth-callback" element={<OAuthCallback />} />
-			<Route path="*" element={<Navigate to="/dashboard" replace />} />
+			<Route path="*" element={<Navigate to="/chat" replace />} />
 		</Routes>
 	);
 }

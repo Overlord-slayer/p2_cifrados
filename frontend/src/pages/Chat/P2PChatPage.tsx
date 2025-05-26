@@ -9,10 +9,10 @@ import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
 import './P2PChat.css'
+import { getUsername } from '@store/userStore'
 
 export default function ChatPage() {
 	const me = useAuth(state => state.accessToken)!
-	const username = "martinezdl.alejandro@gmail.com"
 
 	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
@@ -33,7 +33,7 @@ export default function ChatPage() {
 
 	useEffect(() => {
 		if (!active) return
-		api.get(`/messages/${username}/${active}`, {
+		api.get(`/messages/${getUsername()}/${active}`, {
 			headers: {
 				Authorization: `Bearer ${me}`
 			}
@@ -52,7 +52,7 @@ export default function ChatPage() {
 					Authorization: `Bearer ${me}`
 				}
 			})
-			const res = await api.get(`/messages/${username}/${active}`, {
+			const res = await api.get(`/messages/${getUsername()}/${active}`, {
 				headers: {
 					Authorization: `Bearer ${me}`
 				}
@@ -66,7 +66,7 @@ export default function ChatPage() {
 	return (
 		<div className="chat-container">
 			<aside className="chat-sidebar">
-				<Sidebar contacts={contacts} active={active} onSelect={setActive} />
+				<Sidebar contacts={contacts} username={getUsername()} active={active} onSelect={setActive} />
 			</aside>
 
 			<div className="chat-panel">
@@ -81,7 +81,7 @@ export default function ChatPage() {
 								<MessageBubble
 								key={`${msg.timestamp}-${msg.sender_id}`}
 								msg={msg}
-								me={msg.sender_id !== Number(active)}
+								me={msg.sender_id !== getUsername()}
 								/>
 							))}
 						</main>

@@ -3,12 +3,13 @@ import { HiUsers, HiOutlineUser } from 'react-icons/hi'
 import './Sidebar.css'
 
 interface Props {
-	contacts: { id: string }[]
+	contacts: { id: string }[],
+	username: string
 	active: string
 	onSelect: (id: string) => void
 }
 
-export default function Sidebar({ contacts, active, onSelect }: Props) {
+export default function Sidebar({ contacts, username, active, onSelect }: Props) {
 	const items = [...contacts]
 
 	return (
@@ -21,7 +22,7 @@ export default function Sidebar({ contacts, active, onSelect }: Props) {
 				{items.map(c => {
 					const isActive = c.id === active
 					const Icon = HiOutlineUser
-
+					if (c.id == username) return
 					return (
 						<div
 							key={c.id}

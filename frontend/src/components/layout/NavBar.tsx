@@ -18,12 +18,12 @@ export default function NavBar() {
     <nav className="navbar">
       <div className="navbar-links">
         <NavLink
-          to="/dashboard"
+          to="/chat"
           className={({ isActive }) =>
             isActive ? 'nav-link active' : 'nav-link'
           }
         >
-          Dashboard
+          Chat
         </NavLink>
       </div>
       <button className="logout-button" onClick={handleLogout}>
