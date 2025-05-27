@@ -8,6 +8,7 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 import base64
+import json
 import os
 
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -62,7 +63,7 @@ def generate_rsa_keys():
 	public_key = private_key.public_key()
 	return private_key, public_key
 
-def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> dict:
+def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> str:
 	# Genera clave AES-256 aleatoria
 	clave_aes = get_random_bytes(32)
 	iv = get_random_bytes(16)
@@ -78,13 +79,15 @@ def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> dict:
 	cipher_rsa = PKCS1_OAEP.new(rsa_key)
 	clave_aes_cifrada = cipher_rsa.encrypt(clave_aes)
 
-	return {
+	data = {
 		'mensaje': base64.b64encode(mensaje_cifrado).decode(),
 		'clave_aes': base64.b64encode(clave_aes_cifrada).decode(),
 		'iv': base64.b64encode(iv).decode()
 	}
+	return json.dumps(data)
 
-def descifrar_mensaje_individual(data: dict, clave_privada_rsa_pem: str) -> str:
+def descifrar_mensaje_individual(data_str: str, clave_privada_rsa_pem: str) -> str:
+	data = json.loads(data_str)
 	clave_aes_cifrada = base64.b64decode(data['clave_aes'])
 	mensaje_cifrado = base64.b64decode(data['mensaje'])
 	iv = base64.b64decode(data['iv'])
@@ -100,21 +103,25 @@ def descifrar_mensaje_individual(data: dict, clave_privada_rsa_pem: str) -> str:
 	padding_len = mensaje_padded[-1]
 	return mensaje_padded[:-padding_len].decode()
 
-
-def cifrar_mensaje_grupal(mensaje: str, clave_simetrica: bytes) -> dict:
+def cifrar_mensaje_grupal(mensaje: str, clave_simetrica: bytes) -> str:
 	aesgcm = AESGCM(clave_simetrica)
 	nonce = get_random_bytes(12)
 	mensaje_cifrado = aesgcm.encrypt(nonce, mensaje.encode(), None)
-	return {
+	data = {
 		'mensaje': base64.b64encode(mensaje_cifrado).decode(),
 		'nonce': base64.b64encode(nonce).decode()
 	}
+	return json.dumps(data)
 
-def descifrar_mensaje_grupal(data: dict, clave_simetrica: bytes) -> str:
-	aesgcm = AESGCM(clave_simetrica)
-	nonce = base64.b64decode(data['nonce'])
-	mensaje_cifrado = base64.b64decode(data['mensaje'])
-	return aesgcm.decrypt(nonce, mensaje_cifrado, None).decode()
+def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
+	try:
+		data = json.loads(data_str)
+		aesgcm = AESGCM(clave_simetrica)
+		nonce = base64.b64decode(data['nonce'])
+		mensaje_cifrado = base64.b64decode(data['mensaje'])
+		return aesgcm.decrypt(nonce, mensaje_cifrado, None).decode()
+	except:
+		return data_str
 
 def bytes_to_str(data: bytes) -> str:
 	return base64.b64encode(data).decode('utf-8')

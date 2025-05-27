@@ -4,7 +4,11 @@ from app.db.db import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship
 
+from app.schemas.schemas import *
+from typing import Optional
+
 from app.crypto.crypto import *
+from app.crypto.sign_verify import *
 
 class User(Base):
 	__tablename__ = "users"
@@ -27,10 +31,11 @@ class P2P_Message(Base):
 	__tablename__ = "p2p_messages"
 
 	id = Column(Integer, primary_key=True, index=True)
-	
+
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
+	signature = Column(Text)
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -72,6 +77,20 @@ class GroupMessage(Base):
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_group_messages")
 	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
 
+class CreateGroupPayload(BaseModel):
+	name: str
+
+class MessagePayload(BaseModel):
+	message: str
+	signed: bool
+
+class MessageResponse(BaseModel):
+	sender: str
+	receiver: str
+	message: str
+	signature: Optional[str] = None
+	timestamp: datetime
+
 def get_user_id_by_email(db: Session, email: str) -> int | None:
 	user = db.query(User).filter(User.email == email.strip()).first()
 	return user.id if user else None
@@ -80,20 +99,39 @@ def get_email_by_user_id(db: Session, id: int) -> int | None:
 	user = db.query(User).filter(User.id == id).first()
 	return user.email if user else None
 
-def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str):
-	msg = P2P_Message(sender_id=sender_id, receiver_id=receiver_id, message=message)
+def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: MessagePayload):
+	pub_key_string = db.query(User).filter_by(id=sender_id).first().public_key
+	pub_key = str_to_bytes(pub_key_string)
+	encrypted_message = cifrar_mensaje_individual(payload.message, pub_key)
+
+	#if (payload.signed):
+	#	sign_data()
+
+	msg = P2P_Message(
+		sender_id=sender_id,
+		receiver_id=receiver_id,
+		message=payload.message
+	)
 	db.add(msg)
 	db.commit()
 	db.refresh(msg)
 	return msg
 
-def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
-	return db.query(P2P_Message).filter(
+def get_p2p_messages_by_user(db: Session, user1: str, user2: str, user1_id: int, user2_id: int):
+	data = db.query(P2P_Message).filter(
 		or_(
 			and_(P2P_Message.sender_id == user1_id, P2P_Message.receiver_id == user2_id),
 			and_(P2P_Message.sender_id == user2_id, P2P_Message.receiver_id == user1_id)
 		)
 	).order_by(P2P_Message.timestamp.desc()).all()
+	messages = [{
+		"sender":   user1 if msg.sender_id   == user1_id else user2,
+		"receiver": user2 if msg.receiver_id == user2_id else user1,
+		"message": msg.message,
+		"signature": msg.signature,
+		"timestamp": msg.timestamp,
+	} for msg in data]
+	return messages
 
 def add_user_to_group(db: Session, user_id: int, group_name: int):
 	existing = db.query(GroupUser).filter_by(user_id=user_id, group_name=group_name).first()
@@ -105,24 +143,42 @@ def add_user_to_group(db: Session, user_id: int, group_name: int):
 	db.refresh(group_user)
 	return group_user
 
-def send_group_message(db: Session, sender_id: int, group_name: int, message: str):
+def send_group_message(db: Session, sender_id: int, group_name: str, payload: MessagePayload):
+	aes_key_string = db.query(Group).filter_by(id=group_name).first().shared_aes_key
+	aes_key = str_to_bytes(aes_key_string)
+	encrypted_message = cifrar_mensaje_grupal(payload.message, aes_key)
+
 	group_message = GroupMessage(
 		sender_id=sender_id,
 		group_name=group_name,
-		message=message
+		message=encrypted_message
 	)
 	db.add(group_message)
 	db.commit()
 	db.refresh(group_message)
-	return group_message
+
+	result_message = group_message
+	result_message.message = payload.message
+	return result_message
 
 def get_group_messages(db: Session, group_name: int):
-	return (
+	data = (
 		db.query(GroupMessage)
 		.filter_by(group_name=group_name)
 		.order_by(GroupMessage.timestamp.desc())
 		.all()
 	)
+	aes_key_string = db.query(Group).filter_by(id=group_name).first().shared_aes_key
+	aes_key = str_to_bytes(aes_key_string)
+
+	messages = [{
+		"sender": get_email_by_user_id(db, msg.sender_id),
+		"receiver": msg.group_name,
+		"message": descifrar_mensaje_grupal(msg.message, aes_key),
+		"signature": None,
+		"timestamp": msg.timestamp,
+	} for msg in data]
+	return messages
 
 def get_user_groups(db: Session, user_id: int):
 	return (

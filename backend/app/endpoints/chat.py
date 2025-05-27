@@ -36,8 +36,10 @@ def api_get_users(user: str, username: str = Depends(get_current_user), db: Sess
 	groups = [{"id": group.id} for group in db_groups]
 	return groups
 
-class CreateGroupPayload(BaseModel):
-	name: str
+@router.get("/group-messages/{group_name}/key")
+def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	group = db.query(Group).filter(Group.id == group_name.strip()).first()
+	return group.shared_aes_key
 
 @router.post("/group-messages/create")
 def api_create_group(group_name: CreateGroupPayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -50,37 +52,14 @@ def api_add_to_group(group_name: str, user_destino: CreateGroupPayload, username
 	group_user = add_user_to_group(db, user_receiver, group_name)
 	return group_user
 
-class MessagePayload(BaseModel):
-	message: str
-	signed: bool
-
-class MessageResponse(BaseModel):
-	sender: str
-	receiver: str
-	message: str
-	signature: Optional[str] = None
-	timestamp: datetime
-
 @router.get("/group-messages/{group_name}", response_model=List[MessageResponse])
 def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, username)
 	if not user_sender:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	db_messages = get_group_messages(db, group_name)
-	messages = [{
-		"sender": get_email_by_user_id(db, msg.sender_id),
-		"receiver": msg.group_name,
-		"message": msg.message,
-		"signature": None,
-		"timestamp": msg.timestamp,
-	} for msg in db_messages]
+	messages = get_group_messages(db, group_name)
 	return messages
-
-@router.get("/group-messages/{group_name}/key")
-def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	group = db.query(Group).filter(Group.id == group_name.strip()).first()
-	return group.shared_aes_key
 
 @router.post("/group-messages/{group_name}")
 def api_send_group_message(group_name: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -88,7 +67,7 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 	if not sender:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	msg = send_group_message(db, sender, group_name, payload.message)
+	msg = send_group_message(db, sender, group_name, payload)
 	return msg
 
 @router.get("/messages/{user_origen}/{user_destino}", response_model=List[MessageResponse])
@@ -98,14 +77,7 @@ def api_get_messages(user_origen: str, user_destino: str, username: str = Depend
 	if not user_sender or not user_receiver:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	db_messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
-	messages = [{
-		"sender": user_origen if msg.sender_id == user_sender else user_destino,
-		"receiver": user_destino if msg.receiver_id == user_receiver else user_origen,
-		"message": msg.message,
-		"signature": None,
-		"timestamp": msg.timestamp,
-	} for msg in db_messages]
+	messages = get_p2p_messages_by_user(db, user_origen, user_destino, user_sender, user_receiver)
 	return messages
 
 @router.post("/messages/{user_destino}")
@@ -115,5 +87,5 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 	if not sender or not receiver:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	msg = send_p2p_message(db, sender, receiver, payload.message)
+	msg = send_p2p_message(db, sender, receiver, payload)
 	return msg

@@ -16,7 +16,6 @@ export default function GroupChatPage() {
 
 	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
-	const [sign, setSign] = useState<boolean>(false)
 
 	const messages = useChatStore(state => state.messages)
 	const setMessages = useChatStore(state => state.setMessages)
@@ -79,7 +78,7 @@ export default function GroupChatPage() {
 		try {
 			await api.post(`/group-messages/${active}`, {
 				message: text,
-				signed: sign
+				signed: false
 			}, {
 				headers: {
 					Authorization: `Bearer ${me}`
@@ -173,7 +172,6 @@ export default function GroupChatPage() {
 						</main>
 
 						<div className="chat-footer">
-							<SignToggle enabled={sign} onToggle={setSign} />
 							<MessageInput onSend={send} />
 						</div>
 					</>
