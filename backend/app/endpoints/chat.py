@@ -77,7 +77,7 @@ def api_get_messages(user_origen: str, user_destino: str, username: str = Depend
 	if not user_sender or not user_receiver:
 		raise HTTPException(status_code=404, detail="User not found")
 
-	messages = get_p2p_messages_by_user(db, user_origen, user_destino, user_sender, user_receiver)
+	messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
 	return messages
 
 @router.post("/messages/{user_destino}")

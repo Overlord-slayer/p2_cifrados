@@ -100,37 +100,63 @@ def get_email_by_user_id(db: Session, id: int) -> int | None:
 	return user.email if user else None
 
 def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: MessagePayload):
-	pub_key_string = db.query(User).filter_by(id=sender_id).first().public_key
-	pub_key = str_to_bytes(pub_key_string)
+	sender = db.query(User).filter_by(id=sender_id).first()
+	receiver = db.query(User).filter_by(id=receiver_id).first()
+
+	pub_key = str_to_bytes(receiver.public_key)
 	encrypted_message = cifrar_mensaje_individual(payload.message, pub_key)
 
-	#if (payload.signed):
-	#	sign_data()
+	signature = None
+	if (payload.signed):
+		priv_key = str_to_bytes(sender.private_key)
+		#priv_key = decrypt_private_key(priv_key_encrypted, APP_SECRET) TODO
+		signature = sign_data(encrypted_message, priv_key)
 
 	msg = P2P_Message(
 		sender_id=sender_id,
 		receiver_id=receiver_id,
-		message=payload.message
+		message=encrypted_message,
+		signature=signature
 	)
 	db.add(msg)
 	db.commit()
 	db.refresh(msg)
+	msg.message = payload.message
 	return msg
 
-def get_p2p_messages_by_user(db: Session, user1: str, user2: str, user1_id: int, user2_id: int):
+def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
+	user1_db = db.query(User).filter_by(id=user1_id).first()
+	user2_db = db.query(User).filter_by(id=user2_id).first()
+
 	data = db.query(P2P_Message).filter(
 		or_(
 			and_(P2P_Message.sender_id == user1_id, P2P_Message.receiver_id == user2_id),
 			and_(P2P_Message.sender_id == user2_id, P2P_Message.receiver_id == user1_id)
 		)
 	).order_by(P2P_Message.timestamp.desc()).all()
-	messages = [{
-		"sender":   user1 if msg.sender_id   == user1_id else user2,
-		"receiver": user2 if msg.receiver_id == user2_id else user1,
-		"message": msg.message,
-		"signature": msg.signature,
-		"timestamp": msg.timestamp,
-	} for msg in data]
+
+	messages = []
+	for msg in data:
+		sender = user1_db if msg.sender_id   == user1_id else user2_db
+		receiver = user2_db if msg.receiver_id == user2_id else user1_db
+
+		priv_key = str_to_bytes(receiver.private_key)
+		#priv_key = decrypt_private_key(priv_key_encrypted, APP_SECRET) TODO
+		decrypted_message = descifrar_mensaje_individual(msg.message, priv_key)
+
+		signature = None
+		if (msg.signature):
+			pub_key = str_to_bytes(sender.public_key)
+			if (verify_signature(msg.message, msg.signature, pub_key)):
+				signature = "True"
+
+		messages.append({
+			"sender":   sender.email,
+			"receiver": receiver.email,
+			"message" : decrypted_message,
+			"signature": signature,
+			"timestamp": msg.timestamp,
+		})
 	return messages
 
 def add_user_to_group(db: Session, user_id: int, group_name: int):

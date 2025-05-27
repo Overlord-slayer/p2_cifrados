@@ -52,19 +52,15 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 		totp_secret = pyotp.random_base32()
 
 		private_key, public_key = generate_rsa_keys()
-		public_key_bytes = public_key.public_bytes(
-			encoding=serialization.Encoding.PEM,
-			format=serialization.PublicFormat.SubjectPublicKeyInfo
-		)
-		private_key_encrypted = encrypt_private_key(private_key, APP_SECRET)
+		private_key_encrypted = encrypt_private_key(private_key, APP_SECRET) # TODO
 
 		user = User(
 			email=email,
 			hashed_password="",
 			totp_secret=totp_secret,
 			is_google_account=True,
-			public_key=bytes_to_str(public_key_bytes),
-			private_key=bytes_to_str(private_key_encrypted)
+			public_key=bytes_to_str(public_key),
+			private_key=bytes_to_str(private_key)
 		)
 		db.add(user)
 		db.commit()

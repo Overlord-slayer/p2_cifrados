@@ -3,7 +3,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
-from base64 import urlsafe_b64encode, urlsafe_b64decode
+
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
@@ -45,23 +45,17 @@ def decrypt_data(encrypted: bytes, secret: bytes) -> bytes:
 	return decryptor.update(ciphertext) + decryptor.finalize()
 
 def encrypt_private_key(private_key, app_secret: bytes):
-	pem = private_key.private_bytes(
-		encoding=serialization.Encoding.PEM,
-		format=serialization.PrivateFormat.PKCS8,
-		encryption_algorithm=serialization.NoEncryption()
-	)
-	return encrypt_data(pem, app_secret)
+	return encrypt_data(private_key, app_secret)
 
 def decrypt_private_key(encrypted_data: bytes, app_secret: bytes):
 	decrypted_pem = decrypt_data(encrypted_data, app_secret)
 	return serialization.load_pem_private_key(decrypted_pem, password=None, backend=default_backend())
 
 def generate_rsa_keys():
-	private_key = rsa.generate_private_key(
-		public_exponent=65537, key_size=2048, backend=default_backend()
-	)
-	public_key = private_key.public_key()
-	return private_key, public_key
+	key = RSA.generate(2048)
+	private_pem = key.export_key()
+	public_pem = key.publickey().export_key()
+	return private_pem, public_pem
 
 def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> str:
 	# Genera clave AES-256 aleatoria
@@ -87,21 +81,25 @@ def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> str:
 	return json.dumps(data)
 
 def descifrar_mensaje_individual(data_str: str, clave_privada_rsa_pem: str) -> str:
-	data = json.loads(data_str)
-	clave_aes_cifrada = base64.b64decode(data['clave_aes'])
-	mensaje_cifrado = base64.b64decode(data['mensaje'])
-	iv = base64.b64decode(data['iv'])
+	try:
+		data = json.loads(data_str)
+		clave_aes_cifrada = base64.b64decode(data['clave_aes'])
+		mensaje_cifrado = base64.b64decode(data['mensaje'])
+		iv = base64.b64decode(data['iv'])
 
-	# Descifra clave AES
-	rsa_key = RSA.import_key(clave_privada_rsa_pem)
-	cipher_rsa = PKCS1_OAEP.new(rsa_key)
-	clave_aes = cipher_rsa.decrypt(clave_aes_cifrada)
+		# Descifra clave AES
+		rsa_key = RSA.import_key(clave_privada_rsa_pem)
+		cipher_rsa = PKCS1_OAEP.new(rsa_key)
+		clave_aes = cipher_rsa.decrypt(clave_aes_cifrada)
 
-	# Descifra mensaje
-	cipher_aes = AES.new(clave_aes, AES.MODE_CBC, iv)
-	mensaje_padded = cipher_aes.decrypt(mensaje_cifrado)
-	padding_len = mensaje_padded[-1]
-	return mensaje_padded[:-padding_len].decode()
+		# Descifra mensaje
+		cipher_aes = AES.new(clave_aes, AES.MODE_CBC, iv)
+		mensaje_padded = cipher_aes.decrypt(mensaje_cifrado)
+		padding_len = mensaje_padded[-1]
+		return mensaje_padded[:-padding_len].decode()
+	except Exception as e:
+		print("\n"+"-"*50+"\n"+str(e)+"\n"+"-"*50)
+		return data_str
 
 def cifrar_mensaje_grupal(mensaje: str, clave_simetrica: bytes) -> str:
 	aesgcm = AESGCM(clave_simetrica)
@@ -120,7 +118,8 @@ def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
 		nonce = base64.b64decode(data['nonce'])
 		mensaje_cifrado = base64.b64decode(data['mensaje'])
 		return aesgcm.decrypt(nonce, mensaje_cifrado, None).decode()
-	except:
+	except Exception as e:
+		print("\n"+"-"*50+"\n"+str(e)+"\n"+"-"*50)
 		return data_str
 
 def bytes_to_str(data: bytes) -> str:
