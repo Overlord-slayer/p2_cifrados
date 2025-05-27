@@ -108,9 +108,9 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 
 	signature = None
 	if (payload.signed):
-		priv_key = str_to_bytes(sender.private_key)
-		#priv_key = decrypt_private_key(priv_key_encrypted, APP_SECRET) TODO
-		signature = sign_data(encrypted_message, priv_key)
+		private_key_encrypted = str_to_bytes(sender.private_key)
+		private_key = decrypt_bytes(private_key_encrypted)
+		signature = sign_data(encrypted_message, private_key)
 
 	msg = P2P_Message(
 		sender_id=sender_id,
@@ -137,12 +137,12 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 
 	messages = []
 	for msg in data:
-		sender = user1_db if msg.sender_id   == user1_id else user2_db
+		sender =   user1_db if msg.sender_id   == user1_id else user2_db
 		receiver = user2_db if msg.receiver_id == user2_id else user1_db
 
-		priv_key = str_to_bytes(receiver.private_key)
-		#priv_key = decrypt_private_key(priv_key_encrypted, APP_SECRET) TODO
-		decrypted_message = descifrar_mensaje_individual(msg.message, priv_key)
+		private_key_encrypted = str_to_bytes(receiver.private_key)
+		private_key = decrypt_bytes(private_key_encrypted)
+		decrypted_message = descifrar_mensaje_individual(msg.message, private_key)
 
 		signature = None
 		if (msg.signature):

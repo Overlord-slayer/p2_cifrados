@@ -1,55 +1,38 @@
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+from cryptography.fernet import Fernet
 
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
+
+from dotenv import load_dotenv
+import hashlib
 import base64
 import json
 import os
 
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 
-APP_SECRET = b"your-very-secure-app-secret"
+load_dotenv()
+APP_SECRET = os.getenv("APP_SECRET")
 
-def derive_key(secret: bytes, salt: bytes, length: int = 32) -> bytes:
-	kdf = PBKDF2HMAC(
-		algorithm=hashes.SHA256(),
-		length=length,
-		salt=salt,
-		iterations=100_000,
-		backend=default_backend()
-	)
-	return kdf.derive(secret)
+def generate_key() -> bytes:
+	hash_digest = hashlib.sha256(APP_SECRET.encode()).digest()
+	return base64.urlsafe_b64encode(hash_digest)
 
-def encrypt_data(data: bytes, secret: bytes) -> bytes:
-	salt = os.urandom(16)
-	key = derive_key(secret, salt)
-	iv = os.urandom(16)
-	cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
-	encryptor = cipher.encryptor()
-	ciphertext = encryptor.update(data) + encryptor.finalize()
-	return salt + iv + ciphertext  # Pack salt+iv+ciphertext
+def encrypt_bytes(data: bytes) -> bytes:
+	key = generate_key()
+	fernet = Fernet(key)
+	encrypted = fernet.encrypt(data)
+	return encrypted
 
-def decrypt_data(encrypted: bytes, secret: bytes) -> bytes:
-	salt = encrypted[:16]
-	iv = encrypted[16:32]
-	ciphertext = encrypted[32:]
-	key = derive_key(secret, salt)
-	cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
-	decryptor = cipher.decryptor()
-	return decryptor.update(ciphertext) + decryptor.finalize()
-
-def encrypt_private_key(private_key, app_secret: bytes):
-	return encrypt_data(private_key, app_secret)
-
-def decrypt_private_key(encrypted_data: bytes, app_secret: bytes):
-	decrypted_pem = decrypt_data(encrypted_data, app_secret)
-	return serialization.load_pem_private_key(decrypted_pem, password=None, backend=default_backend())
+def decrypt_bytes(data: bytes) -> bytes:
+	key = generate_key()
+	fernet = Fernet(key)
+	decrypted = fernet.decrypt(data)
+	return decrypted
 
 def generate_rsa_keys():
 	key = RSA.generate(2048)
@@ -57,7 +40,7 @@ def generate_rsa_keys():
 	public_pem = key.publickey().export_key()
 	return private_pem, public_pem
 
-def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> str:
+def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: bytes) -> str:
 	# Genera clave AES-256 aleatoria
 	clave_aes = get_random_bytes(32)
 	iv = get_random_bytes(16)
@@ -80,7 +63,7 @@ def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: str) -> str:
 	}
 	return json.dumps(data)
 
-def descifrar_mensaje_individual(data_str: str, clave_privada_rsa_pem: str) -> str:
+def descifrar_mensaje_individual(data_str: str, clave_privada_rsa_pem: bytes) -> str:
 	try:
 		data = json.loads(data_str)
 		clave_aes_cifrada = base64.b64decode(data['clave_aes'])
@@ -123,7 +106,7 @@ def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
 		return data_str
 
 def bytes_to_str(data: bytes) -> str:
-	return base64.b64encode(data).decode('utf-8')
+	return base64.urlsafe_b64encode(data).decode()
 
 def str_to_bytes(data_str: str) -> bytes:
-	return base64.b64decode(data_str)
+	return base64.urlsafe_b64decode(data_str)

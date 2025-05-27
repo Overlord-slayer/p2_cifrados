@@ -33,7 +33,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 		totp_secret = pyotp.random_base32()
 
 		private_key, public_key = generate_rsa_keys()
-		private_key_encrypted = encrypt_private_key(private_key, APP_SECRET) # TODO
+		private_key_encrypted = encrypt_bytes(private_key)
 
 		# Create SQLAlchemy user object
 		new_user = User(
@@ -41,7 +41,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 			hashed_password=hashed_pw,
 			totp_secret=totp_secret,
 			public_key=bytes_to_str(public_key),
-			private_key=bytes_to_str(private_key)
+			private_key=bytes_to_str(private_key_encrypted)
 		)
 		db.add(new_user)
 		db.commit()
