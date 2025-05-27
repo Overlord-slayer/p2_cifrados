@@ -13,19 +13,15 @@ class User(Base):
 	email = Column(String, unique=True, index=True, nullable=False)
 	hashed_password = Column(String, nullable=False)
 	totp_secret = Column(String, nullable=True)
-	public_key = Column(
-		LargeBinary, nullable=True
-	)  # ECC/RSA pública para cifrado o firma
+
+	public_key = Column(String, nullable=False)
+	private_key = Column(String, nullable=False)
+
 	is_active = Column(Boolean, default=True)
 
-	# Nuevos campos
-	is_google_account = Column(
-		Boolean, default=False
-	)  # Indica si el usuario usó Google
-	email_verified = Column(
-		Boolean, default=False
-	)  # Por si quieres manejar verificación
-	totp_verified = Column(Boolean, default=False)  # True después de escanear QR
+	is_google_account = Column(Boolean, default=False)
+	email_verified = Column(Boolean, default=False)
+	totp_verified = Column(Boolean, default=False)
 
 class P2P_Message(Base):
 	__tablename__ = "p2p_messages"
@@ -38,7 +34,6 @@ class P2P_Message(Base):
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
-	# Relationships to link to User
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
 	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
 
@@ -80,6 +75,10 @@ class GroupMessage(Base):
 def get_user_id_by_email(db: Session, email: str) -> int | None:
 	user = db.query(User).filter(User.email == email.strip()).first()
 	return user.id if user else None
+
+def get_email_by_user_id(db: Session, id: int) -> int | None:
+	user = db.query(User).filter(User.id == id).first()
+	return user.email if user else None
 
 def send_p2p_message(db: Session, sender_id: int, receiver_id: int, message: str):
 	msg = P2P_Message(sender_id=sender_id, receiver_id=receiver_id, message=message)

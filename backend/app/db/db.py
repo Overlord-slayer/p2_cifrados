@@ -92,16 +92,3 @@ def get_db():
 		raise e
 	finally:
 		db.close()
-
-# def clear_cache(db, user_id):
-#     # Obtener el usuario con la sesión actual
-#     user = db.query(User).filter(User.id == user_id).first()
-
-#     # Refrescar el objeto para obtener datos más actualizados
-#     db.refresh(user)
-
-#     # Alternativamente, puedes hacer commit y cerrar la sesión para liberar la caché
-#     db.commit()
-#     db.close()
-
-#     return user

@@ -39,7 +39,15 @@ export default function GroupChatPage() {
 					headers: {
 						Authorization: `Bearer ${me}`
 					}
-				})
+				}).then(temp =>
+					api.get(`/users/${getUsername()}/groups`, {
+						headers: {
+							Authorization: `Bearer ${me}`
+						}
+					})
+					.then(res2 => setContacts(res2.data))
+					.catch(err => console.error('Error fetching groups:', err))
+				)
 			)
 		} catch (err) {
 			console.error('Error creating group:', err)

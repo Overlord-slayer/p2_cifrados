@@ -25,8 +25,9 @@ def api_get_users(username: str = Depends(get_current_user), db: Session = Depen
 	return emails
 
 @router.get("/users/{user}/key")
-def api_get_public_key(username: str = Depends(get_current_user)):
-	return {}
+def api_get_public_key(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user = db.query(User).filter(User.email == username.strip()).first()
+	return user.public_key
 
 @router.get("/users/{user}/groups")
 def api_get_users(user: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -68,13 +69,18 @@ def api_get_group_messages(group_name: str, username: str = Depends(get_current_
 
 	db_messages = get_group_messages(db, group_name)
 	messages = [{
-		"sender": get_user_id_by_email(db, msg.sender_id),
+		"sender": get_email_by_user_id(db, msg.sender_id),
 		"receiver": msg.group_name,
 		"message": msg.message,
 		"signature": None,
 		"timestamp": msg.timestamp,
 	} for msg in db_messages]
 	return messages
+
+@router.get("/group-messages/{group_name}/key")
+def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	group = db.query(Group).filter(Group.id == group_name.strip()).first()
+	return group.shared_aes_key
 
 @router.post("/group-messages/{group_name}")
 def api_send_group_message(group_name: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):

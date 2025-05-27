@@ -1,11 +1,59 @@
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 import base64
+import os
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+
+APP_SECRET = b"your-very-secure-app-secret"
+
+def derive_key(secret: bytes, salt: bytes, length: int = 32) -> bytes:
+	kdf = PBKDF2HMAC(
+		algorithm=hashes.SHA256(),
+		length=length,
+		salt=salt,
+		iterations=100_000,
+		backend=default_backend()
+	)
+	return kdf.derive(secret)
+
+def encrypt_data(data: bytes, secret: bytes) -> bytes:
+	salt = os.urandom(16)
+	key = derive_key(secret, salt)
+	iv = os.urandom(16)
+	cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+	encryptor = cipher.encryptor()
+	ciphertext = encryptor.update(data) + encryptor.finalize()
+	return salt + iv + ciphertext  # Pack salt+iv+ciphertext
+
+def decrypt_data(encrypted: bytes, secret: bytes) -> bytes:
+	salt = encrypted[:16]
+	iv = encrypted[16:32]
+	ciphertext = encrypted[32:]
+	key = derive_key(secret, salt)
+	cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+	decryptor = cipher.decryptor()
+	return decryptor.update(ciphertext) + decryptor.finalize()
+
+def encrypt_private_key(private_key, app_secret: bytes):
+	pem = private_key.private_bytes(
+		encoding=serialization.Encoding.PEM,
+		format=serialization.PrivateFormat.PKCS8,
+		encryption_algorithm=serialization.NoEncryption()
+	)
+	return encrypt_data(pem, app_secret)
+
+def decrypt_private_key(encrypted_data: bytes, app_secret: bytes):
+	decrypted_pem = decrypt_data(encrypted_data, app_secret)
+	return serialization.load_pem_private_key(decrypted_pem, password=None, backend=default_backend())
 
 def generate_rsa_keys():
 	private_key = rsa.generate_private_key(

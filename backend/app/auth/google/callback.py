@@ -8,6 +8,8 @@ from fastapi.responses import RedirectResponse
 
 import pyotp
 
+from app.crypto.crypto import *
+
 router = APIRouter(prefix="/auth", tags=["google"])
 
 @router.get("/google/callback")
@@ -48,11 +50,21 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 	else:
 		# Si no existe, crear una nueva cuenta de usuario con is_google_account como True
 		totp_secret = pyotp.random_base32()
+
+		private_key, public_key = generate_rsa_keys()
+		public_key_bytes = public_key.public_bytes(
+			encoding=serialization.Encoding.PEM,
+			format=serialization.PublicFormat.SubjectPublicKeyInfo
+		)
+		private_key_encrypted = encrypt_private_key(private_key, APP_SECRET)
+
 		user = User(
 			email=email,
 			hashed_password="",
 			totp_secret=totp_secret,
 			is_google_account=True,
+			public_key=bytes_to_str(public_key_bytes),
+			private_key=bytes_to_str(private_key_encrypted)
 		)
 		db.add(user)
 		db.commit()

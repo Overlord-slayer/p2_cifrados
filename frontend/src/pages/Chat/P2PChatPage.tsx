@@ -9,7 +9,7 @@ import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
 import './P2PChat.css'
-import { getUsername } from '@store/userStore'
+import { getUsername, getPublicKey } from '@store/userStore'
 
 export default function ChatPage() {
 	const me = useAuth(state => state.accessToken)!
