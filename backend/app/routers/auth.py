@@ -14,6 +14,8 @@ import qrcode
 import io
 import base64
 
+from app.crypto.crypto import *
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=SignupResponse)
@@ -29,8 +31,17 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 	try:
 		hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
 		totp_secret = pyotp.random_base32()
+
+		private_key, public_key = generate_rsa_keys()
+		private_key_encrypted = encrypt_bytes(private_key)
+
+		# Create SQLAlchemy user object
 		new_user = User(
-			email=user.email, hashed_password=hashed_pw, totp_secret=totp_secret
+			email=user.email,
+			hashed_password=hashed_pw,
+			totp_secret=totp_secret,
+			public_key=bytes_to_str(public_key),
+			private_key=bytes_to_str(private_key_encrypted)
 		)
 		db.add(new_user)
 		db.commit()

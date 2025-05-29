@@ -9,5 +9,5 @@ export function ProtectedRoute({ children }: { children: JSX.Element }) {
 
 export function PublicOnlyRoute({ children }: { children: JSX.Element }) {
   const { accessToken } = useAuth();
-  return accessToken ? <Navigate to="/dashboard" /> : children;
+  return accessToken ? <Navigate to="/chat" /> : children;
 }

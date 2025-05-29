@@ -1,7 +1,14 @@
+from sqlalchemy.orm import Session
 from sqlalchemy import *
 from app.db.db import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship
+
+from app.schemas.schemas import *
+from typing import Optional
+
+from app.crypto.crypto import *
+from app.crypto.sign_verify import *
 
 class User(Base):
 	__tablename__ = "users"
@@ -10,61 +17,207 @@ class User(Base):
 	email = Column(String, unique=True, index=True, nullable=False)
 	hashed_password = Column(String, nullable=False)
 	totp_secret = Column(String, nullable=True)
-	public_key = Column(
-		LargeBinary, nullable=True
-	)  # ECC/RSA pública para cifrado o firma
+
+	public_key = Column(String, nullable=False)
+	private_key = Column(String, nullable=False)
+
 	is_active = Column(Boolean, default=True)
 
-	# Nuevos campos
-	is_google_account = Column(
-		Boolean, default=False
-	)  # Indica si el usuario usó Google
-	email_verified = Column(
-		Boolean, default=False
-	)  # Por si quieres manejar verificación
-	totp_verified = Column(Boolean, default=False)  # True después de escanear QR
+	is_google_account = Column(Boolean, default=False)
+	email_verified = Column(Boolean, default=False)
+	totp_verified = Column(Boolean, default=False)
 
 class P2P_Message(Base):
 	__tablename__ = "p2p_messages"
 
 	id = Column(Integer, primary_key=True, index=True)
-	
+
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	
+
+	signature = Column(Text)
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
-	# Relationships to link to User
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
 	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
 
 class Group(Base):
 	__tablename__ = "groups"
 
-	id = Column(Integer, primary_key=True, index=True)
-	name = Column(String, nullable=False)
-	created_at = Column(DateTime, default=datetime.utcnow)
+	id = Column(String, primary_key=True, index=True)
 
-class GroupMembership(Base):
-	__tablename__ = "group_memberships"
+	shared_aes_key = Column(String, nullable=False)
+
+	users = relationship("GroupUser", back_populates="group", cascade="all, delete-orphan")
+	messages = relationship("GroupMessage", back_populates="group", cascade="all, delete-orphan")
+
+class GroupUser(Base):
+	__tablename__ = "group_users"
 
 	id = Column(Integer, primary_key=True, index=True)
+
 	user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-	group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-	joined_at = Column(DateTime, default=datetime.utcnow)
+	group_name = Column(String, ForeignKey("groups.id"), nullable=False)
 
 	user = relationship("User", backref="group_memberships")
-	group = relationship("Group", backref="memberships")
+	group = relationship("Group", back_populates="users")
 
 class GroupMessage(Base):
 	__tablename__ = "group_messages"
 
 	id = Column(Integer, primary_key=True, index=True)
-	group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+	group_name  = Column(String, ForeignKey("groups.id"), nullable=False)
+
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
-	group = relationship("Group", backref="messages")
-	sender = relationship("User", backref="group_messages")
+	sender = relationship("User", foreign_keys=[sender_id], backref="sent_group_messages")
+	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
+
+class CreateGroupPayload(BaseModel):
+	name: str
+
+class MessagePayload(BaseModel):
+	message: str
+	signed: bool
+
+class MessageResponse(BaseModel):
+	sender: str
+	receiver: str
+	message: str
+	signature: Optional[str] = None
+	timestamp: datetime
+
+def get_user_id_by_email(db: Session, email: str) -> int | None:
+	user = db.query(User).filter(User.email == email.strip()).first()
+	return user.id if user else None
+
+def get_email_by_user_id(db: Session, id: int) -> int | None:
+	user = db.query(User).filter(User.id == id).first()
+	return user.email if user else None
+
+def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: MessagePayload):
+	sender = db.query(User).filter_by(id=sender_id).first()
+	receiver = db.query(User).filter_by(id=receiver_id).first()
+
+	pub_key = str_to_bytes(receiver.public_key)
+	encrypted_message = cifrar_mensaje_individual(payload.message, pub_key)
+
+	signature = None
+	if (payload.signed):
+		private_key_encrypted = str_to_bytes(sender.private_key)
+		private_key = decrypt_bytes(private_key_encrypted)
+		signature = sign_data(encrypted_message, private_key)
+
+	msg = P2P_Message(
+		sender_id=sender_id,
+		receiver_id=receiver_id,
+		message=encrypted_message,
+		signature=signature
+	)
+	db.add(msg)
+	db.commit()
+	db.refresh(msg)
+	msg.message = payload.message
+	return msg
+
+def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
+	user1_db = db.query(User).filter_by(id=user1_id).first()
+	user2_db = db.query(User).filter_by(id=user2_id).first()
+
+	data = db.query(P2P_Message).filter(
+		or_(
+			and_(P2P_Message.sender_id == user1_id, P2P_Message.receiver_id == user2_id),
+			and_(P2P_Message.sender_id == user2_id, P2P_Message.receiver_id == user1_id)
+		)
+	).order_by(P2P_Message.timestamp.desc()).all()
+
+	messages = []
+	for msg in data:
+		sender =   user1_db if msg.sender_id   == user1_id else user2_db
+		receiver = user2_db if msg.receiver_id == user2_id else user1_db
+
+		private_key_encrypted = str_to_bytes(receiver.private_key)
+		private_key = decrypt_bytes(private_key_encrypted)
+		decrypted_message = descifrar_mensaje_individual(msg.message, private_key)
+
+		signature = None
+		if (msg.signature):
+			pub_key = str_to_bytes(sender.public_key)
+			if (verify_signature(msg.message, msg.signature, pub_key)):
+				signature = "True"
+
+		messages.append({
+			"sender":   sender.email,
+			"receiver": receiver.email,
+			"message" : decrypted_message,
+			"signature": signature,
+			"timestamp": msg.timestamp,
+		})
+	return messages
+
+def add_user_to_group(db: Session, user_id: int, group_name: int):
+	existing = db.query(GroupUser).filter_by(user_id=user_id, group_name=group_name).first()
+	if existing:
+		return existing
+	group_user = GroupUser(user_id=user_id, group_name=group_name)
+	db.add(group_user)
+	db.commit()
+	db.refresh(group_user)
+	return group_user
+
+def send_group_message(db: Session, sender_id: int, group_name: str, payload: MessagePayload):
+	aes_key_string = db.query(Group).filter_by(id=group_name).first().shared_aes_key
+	aes_key = str_to_bytes(aes_key_string)
+	encrypted_message = cifrar_mensaje_grupal(payload.message, aes_key)
+
+	group_message = GroupMessage(
+		sender_id=sender_id,
+		group_name=group_name,
+		message=encrypted_message
+	)
+	db.add(group_message)
+	db.commit()
+	db.refresh(group_message)
+
+	result_message = group_message
+	result_message.message = payload.message
+	return result_message
+
+def get_group_messages(db: Session, group_name: int):
+	data = (
+		db.query(GroupMessage)
+		.filter_by(group_name=group_name)
+		.order_by(GroupMessage.timestamp.desc())
+		.all()
+	)
+	aes_key_string = db.query(Group).filter_by(id=group_name).first().shared_aes_key
+	aes_key = str_to_bytes(aes_key_string)
+
+	messages = [{
+		"sender": get_email_by_user_id(db, msg.sender_id),
+		"receiver": msg.group_name,
+		"message": descifrar_mensaje_grupal(msg.message, aes_key),
+		"signature": None,
+		"timestamp": msg.timestamp,
+	} for msg in data]
+	return messages
+
+def get_user_groups(db: Session, user_id: int):
+	return (
+		db.query(Group)
+		.join(GroupUser)
+		.filter(GroupUser.user_id == user_id)
+		.all()
+	)
+
+def create_group(db: Session, name: str) -> Group:
+	aes_key = bytes_to_str(get_random_bytes(32))
+	new_group = Group(id=name, shared_aes_key=aes_key)
+	db.add(new_group)
+	db.commit()
+	db.refresh(new_group)
+	return new_group

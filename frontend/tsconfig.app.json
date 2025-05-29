@@ -46,7 +46,7 @@
       ],
       "@routes/*": [
         "src/routes/*"
-      ]
+      ],
     }
   },
   "include": [

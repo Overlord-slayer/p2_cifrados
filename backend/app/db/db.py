@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
+from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine.url import make_url
 from dotenv import load_dotenv
@@ -13,7 +14,6 @@ load_dotenv()
 
 # Obtener URL de la base de datos
 DATABASE_URL = os.getenv("DATABASE_URL")
-import psycopg2
 
 def create_database_if_not_exists():
 	# Parse the URL
@@ -92,16 +92,3 @@ def get_db():
 		raise e
 	finally:
 		db.close()
-
-# def clear_cache(db, user_id):
-#     # Obtener el usuario con la sesión actual
-#     user = db.query(User).filter(User.id == user_id).first()
-
-#     # Refrescar el objeto para obtener datos más actualizados
-#     db.refresh(user)
-
-#     # Alternativamente, puedes hacer commit y cerrar la sesión para liberar la caché
-#     db.commit()
-#     db.close()
-
-#     return user
