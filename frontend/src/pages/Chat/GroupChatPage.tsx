@@ -15,6 +15,8 @@ export default function GroupChatPage() {
   const [active, setActive] = useState<string>('')
   const [groupName, setGroupName] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState<{ email: string }[]>([])
+  const [selectedUser, setSelectedUser] = useState('')
 
   const messages = useChatStore(state => state.messages)
   const setMessages = useChatStore(state => state.setMessages)
@@ -51,6 +53,23 @@ export default function GroupChatPage() {
     }
   }
 
+  const handleAddUser = async () => {
+    try {
+      await api.post(`/group-messages/${active}/add`, {
+        name: selectedUser
+      }, {
+        headers: {
+          Authorization: `Bearer ${me}`
+        }
+      })
+      alert(`✅ ${selectedUser} agregado al grupo`)
+      setSelectedUser('')
+    } catch (err) {
+      console.error('Error adding user to group:', err)
+      alert('No se pudo agregar el usuario')
+    }
+  }
+
   useEffect(() => {
     api.get(`/users/${getUsername()}/groups`, {
       headers: {
@@ -59,6 +78,16 @@ export default function GroupChatPage() {
     })
       .then(res => setContacts(res.data))
       .catch(err => console.error('Error fetching groups:', err))
+  }, [])
+
+  useEffect(() => {
+    api.get('/users', {
+      headers: {
+        Authorization: `Bearer ${me}`
+      }
+    })
+      .then(res => setAvailableUsers(res.data))
+      .catch(err => console.error('Error fetching users:', err))
   }, [])
 
   useEffect(() => {
@@ -94,7 +123,7 @@ export default function GroupChatPage() {
   }
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" style={{ fontFamily: 'Segoe UI, Roboto, sans-serif' }}>
       <aside className="sidebar">
         <button onClick={() => setShowModal(true)} style={{ width: '100%', backgroundColor: '#25D366', color: 'white', padding: '10px', borderRadius: '6px', marginBottom: '12px', fontWeight: 'bold', boxShadow: '0 2px 6px rgba(0,0,0,0.3)', border: 'none', cursor: 'pointer' }}>
           + Crear Grupo
@@ -143,6 +172,29 @@ export default function GroupChatPage() {
               </div>
             )
           })}
+
+          {!contacts.length && (
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ color: '#ccc', marginBottom: '8px' }}>No hay grupos disponibles</p>
+              <select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', backgroundColor: '#222', color: 'white', border: '1px solid #444' }}
+              >
+                <option value="">-- Selecciona usuario para agregar --</option>
+                {availableUsers.map(u => (
+                  <option key={u.email} value={u.email}>{u.email}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddUser}
+                disabled={!selectedUser}
+                style={{ width: '100%', padding: '8px', marginTop: '8px', backgroundColor: '#25D366', color: 'white', borderRadius: '6px', border: 'none', cursor: selectedUser ? 'pointer' : 'not-allowed', opacity: selectedUser ? 1 : 0.6 }}
+              >
+                Agregar al grupo
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -172,3 +224,4 @@ export default function GroupChatPage() {
     </div>
   )
 }
+
