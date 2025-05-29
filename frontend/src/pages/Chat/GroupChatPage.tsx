@@ -1,5 +1,3 @@
-// src/pages/chat/ChatPage.tsx
-
 import React, { useEffect, useState } from 'react'
 import GroupMessageBubble from '../../components/chat/GroupMessageBubble'
 import SignToggle from '../../components/chat/SignToggle'
@@ -12,227 +10,165 @@ import { HiUsers, HiOutlineUsers } from 'react-icons/hi'
 import { getUsername } from '@store/userStore'
 
 export default function GroupChatPage() {
-	const me = useAuth(state => state.accessToken)!
+  const me = useAuth(state => state.accessToken)!
+  const [contacts, setContacts] = useState<{ id: string }[]>([])
+  const [active, setActive] = useState<string>('')
+  const [groupName, setGroupName] = useState('')
+  const [showModal, setShowModal] = useState(false)
 
-	const [contacts, setContacts] = useState<{ id: string }[]>([])
-	const [active, setActive] = useState<string>('')
-	const [availableUsers, setAvailableUsers] = useState<{ email: string }[]>([])
-	const [selectedUser, setSelectedUser] = useState<string>('')
+  const messages = useChatStore(state => state.messages)
+  const setMessages = useChatStore(state => state.setMessages)
 
-	const messages = useChatStore(state => state.messages)
-	const setMessages = useChatStore(state => state.setMessages)
+  const handleSend = async () => {
+    try {
+      await api.post('/group-messages/create', {
+        name: groupName
+      }, {
+        headers: {
+          Authorization: `Bearer ${me}`
+        }
+      }).then(res =>
+        api.post(`/group-messages/${res.data}/add`, {
+          name: getUsername()
+        }, {
+          headers: {
+            Authorization: `Bearer ${me}`
+          }
+        }).then(() =>
+          api.get(`/users/${getUsername()}/groups`, {
+            headers: {
+              Authorization: `Bearer ${me}`
+            }
+          })
+            .then(res2 => setContacts(res2.data))
+            .catch(err => console.error('Error fetching groups:', err))
+        )
+      )
+      setShowModal(false)
+      setGroupName('')
+    } catch (err) {
+      console.error('Error creating group:', err)
+    }
+  }
 
-	const [showModal, setShowModal] = useState(false);
-	const [groupName, setGroupName] = useState('');
+  useEffect(() => {
+    api.get(`/users/${getUsername()}/groups`, {
+      headers: {
+        Authorization: `Bearer ${me}`
+      }
+    })
+      .then(res => setContacts(res.data))
+      .catch(err => console.error('Error fetching groups:', err))
+  }, [])
 
-	const handleSend = async () => {
-		try {
-			await api.post('/group-messages/create', {
-				name : groupName
-			}, {
-				headers: {
-					Authorization: `Bearer ${me}`
-				}
-			}).then(res =>
-				api.post(`/group-messages/${res.data}/add`, {
-					name : getUsername()
-				}, {
-					headers: {
-						Authorization: `Bearer ${me}`
-					}
-				}).then(temp =>
-					api.get(`/users/${getUsername()}/groups`, {
-						headers: {
-							Authorization: `Bearer ${me}`
-						}
-					})
-					.then(res2 => setContacts(res2.data))
-					.catch(err => console.error('Error fetching groups:', err))
-				)
-			)
-		} catch (err) {
-			console.error('Error creating group:', err)
-		}
-	};
+  useEffect(() => {
+    if (!active) return
+    api.get(`/group-messages/${active}`, {
+      headers: {
+        Authorization: `Bearer ${me}`
+      }
+    })
+      .then(res => setMessages(res.data))
+      .catch(err => console.error('Error fetching messages:', err))
+  }, [active, me, setMessages])
 
-	const handleAddUser = async () => {
-		try {
-			await api.post(`/group-messages/${active}/add`, {
-				name: selectedUser
-			}, {
-				headers: {
-					Authorization: `Bearer ${me}`
-				}
-			})
-			alert(`✅ ${selectedUser} agregado al grupo`)
-			setSelectedUser('')
-		} catch (err) {
-			console.error('Error adding user to group:', err)
-			alert('No se pudo agregar el usuario')
-		}
-	}
+  const send = async (text: string) => {
+    try {
+      await api.post(`/group-messages/${active}`, {
+        message: text,
+        signed: false
+      }, {
+        headers: {
+          Authorization: `Bearer ${me}`
+        }
+      })
+      const res = await api.get(`/group-messages/${active}`, {
+        headers: {
+          Authorization: `Bearer ${me}`
+        }
+      })
+      setMessages(res.data)
+    } catch (err) {
+      console.error('Error sending message:', err)
+    }
+  }
 
-	useEffect(() => {
-		api.get(`/users/${getUsername()}/groups`, {
-			headers: {
-				Authorization: `Bearer ${me}`
-			}
-		})
-		.then(res => setContacts(res.data))
-		.catch(err => console.error('Error fetching groups:', err))
-	}, [])
+  return (
+    <div className="chat-container">
+      <aside className="sidebar">
+        <button onClick={() => setShowModal(true)} style={{ width: '100%', backgroundColor: '#25D366', color: 'white', padding: '10px', borderRadius: '6px', marginBottom: '12px', fontWeight: 'bold', boxShadow: '0 2px 6px rgba(0,0,0,0.3)', border: 'none', cursor: 'pointer' }}>
+          + Crear Grupo
+        </button>
 
-	useEffect(() => {
-		api.get('/users', {
-			headers: {
-				Authorization: `Bearer ${me}`
-			}
-		})
-		.then(res => setAvailableUsers(res.data))
-		.catch(err => console.error('Error fetching users:', err))
-	}, [])
+        {showModal && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 }}>
+            <div style={{ backgroundColor: '#111', color: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', width: '400px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Nuevo Grupo</h2>
+              <input
+                type="text"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', marginBottom: '16px', backgroundColor: '#000', color: 'white', border: '1px solid #444' }}
+                placeholder="Nombre del grupo"
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button onClick={() => setShowModal(false)} style={{ padding: '8px 16px', color: '#ccc', backgroundColor: '#222', borderRadius: '6px', border: '1px solid #444', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={handleSend} disabled={!groupName.trim()} style={{ padding: '8px 16px', backgroundColor: '#25D366', color: 'white', borderRadius: '6px', border: 'none', cursor: groupName.trim() ? 'pointer' : 'not-allowed', opacity: groupName.trim() ? 1 : 0.6 }}>
+                  Crear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-	useEffect(() => {
-		if (!active) return
-		api.get(`/group-messages/${active}`, {
-			headers: {
-				Authorization: `Bearer ${me}`
-			}
-		})
-		.then(res => setMessages(res.data))
-		.catch(err => console.error('Error fetching messages:', err))
-	}, [active, me, setMessages])
+        <h2 className="sidebar-title">
+          <HiUsers className="sidebar-icon" />
+          Grupos
+        </h2>
+        <div className="contact-list">
+          {contacts.map(c => {
+            const isActive = c.id === active
+            const Icon = HiOutlineUsers
+            return (
+              <div
+                key={c.id}
+                className={`contact-item ${isActive ? 'active' : ''}`}
+                onClick={() => setActive(c.id)}
+                style={{ padding: '10px', borderRadius: '6px', backgroundColor: isActive ? '#128C7E' : 'transparent', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Icon className="contact-icon" />
+                <span className="contact-label">{c.id}</span>
+              </div>
+            )
+          })}
+        </div>
+      </aside>
 
-	const send = async (text: string) => {
-		try {
-			await api.post(`/group-messages/${active}`, {
-				message: text,
-				signed: false
-			}, {
-				headers: {
-					Authorization: `Bearer ${me}`
-				}
-			})
-			const res = await api.get(`/group-messages/${active}`, {
-				headers: {
-					Authorization: `Bearer ${me}`
-				}
-			})
-			setMessages(res.data)
-		} catch (err) {
-			console.error('Error sending message:', err)
-		}
-	}
+      <div className="chat-panel">
+        <header className="chat-header">
+          <span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
+        </header>
 
-	return (
-		<div className="chat-container">
-			<aside className="sidebar p-4 text-white">
-				<button
-					onClick={() => setShowModal(true)}
-					className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mb-4 text-sm font-medium"
-				>
-					+ Crear Grupo
-				</button>
+        {active && (
+          <>
+            <main className="chat-messages">
+              {messages.map(msg => (
+                <GroupMessageBubble
+                  key={`${msg.timestamp}-${msg.sender}`}
+                  msg={msg}
+                  me={msg.sender == getUsername()}
+                />
+              ))}
+            </main>
 
-				{showModal && (
-					<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-						<div className="bg-white p-6 rounded-lg shadow-md w-96">
-							<h2 className="text-xl font-semibold mb-4 text-gray-800">Nuevo Grupo</h2>
-							<input
-								type="text"
-								value={groupName}
-								onChange={(e) => setGroupName(e.target.value)}
-								className="w-full px-3 py-2 border rounded mb-4"
-								placeholder="Nombre del grupo"
-							/>
-							<div className="flex justify-end gap-2">
-								<button
-									onClick={() => setShowModal(false)}
-									className="px-4 py-2 text-gray-700 border rounded hover:bg-gray-100"
-								>
-									Cancelar
-								</button>
-								<button
-									onClick={handleSend}
-									className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-									disabled={!groupName.trim()}
-								>
-									Crear
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
-
-				<h2 className="sidebar-title text-lg font-bold mb-3 flex items-center gap-2">
-					<HiUsers className="text-xl" />
-					<span>Grupos</span>
-				</h2>
-
-				<div className="contact-list space-y-2">
-					{contacts.map(c => {
-						const isActive = c.id === active
-						const Icon = HiOutlineUsers
-						return (
-							<div
-								key={c.id}
-								className={`contact-item px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${isActive ? 'bg-blue-700' : 'hover:bg-gray-800'}`}
-								onClick={() => setActive(c.id)}
-							>
-								<Icon className="text-lg" />
-								<span>{c.id}</span>
-							</div>
-						)
-					})}
-
-					{!contacts.length && (
-						<div className="group-add-container mt-4 text-sm">
-							<p className="text-gray-400 mb-2">No hay grupos disponibles</p>
-							<select
-								value={selectedUser}
-								onChange={(e) => setSelectedUser(e.target.value)}
-								className="w-full px-3 py-2 border rounded mb-2 text-black"
-							>
-								<option value="">-- Selecciona usuario para agregar --</option>
-								{availableUsers.map(u => (
-									<option key={u.email} value={u.email}>{u.email}</option>
-								))}
-							</select>
-							<button
-								onClick={handleAddUser}
-								disabled={!selectedUser}
-								className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-							>
-								Agregar al grupo
-							</button>
-						</div>
-					)}
-				</div>
-			</aside>
-
-			<div className="chat-panel">
-				<header className="chat-header">
-					<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
-				</header>
-
-				{active && (
-					<>
-						<main className="chat-messages">
-							{messages.map(msg => (
-								<GroupMessageBubble
-									key={`${msg.timestamp}-${msg.sender}`}
-									msg={msg}
-									me={msg.sender == getUsername()}
-								/>
-							))}
-						</main>
-
-						<div className="chat-footer">
-							<MessageInput onSend={send} />
-						</div>
-					</>
-				)}
-			</div>
-		</div>
-	)
+            <div className="chat-footer">
+              <MessageInput onSend={send} />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
 }
