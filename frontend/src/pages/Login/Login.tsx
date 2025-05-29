@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Toast from "@components/Toast/Toast";
 import styles from "./Login.module.css";
 import { googleLoginUrl } from "@api/api";
+import { loadUsername } from "@store/userStore";
 
 /**
  * Componente `Login`.
@@ -28,123 +29,126 @@ import { googleLoginUrl } from "@api/api";
  * ```
  */
 export default function Login(): JSX.Element {
-  // Estados locales para capturar las entradas del usuario
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [totp, setTotp] = useState("");
+	// Estados locales para capturar las entradas del usuario
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [totp, setTotp] = useState("");
 
-  // Estados para mostrar mensajes emergentes (toast)
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error">("success");
+	// Estados para mostrar mensajes emergentes (toast)
+	const [toastMessage, setToastMessage] = useState("");
+	const [toastType, setToastType] = useState<"success" | "error">("success");
 
-  const { setTokens, accessToken } = useAuth();
-  const navigate = useNavigate();
+	const { setTokens, accessToken } = useAuth();
+	const navigate = useNavigate();
 
-  /**
-   * Redirige automáticamente al dashboard si el usuario ya tiene un token válido.
-   */
-  useEffect(() => {
-    if (accessToken) {
-      navigate("/dashboard");
-    }
-  }, [accessToken, navigate]);
+	/**
+	 * Redirige automáticamente al dashboard si el usuario ya tiene un token válido.
+	 */
+	useEffect(() => {
+		if (accessToken) {
+			loadUsername(accessToken)
+			navigate("/chat");
+		}
+	}, [accessToken, navigate]);
 
-  /**
-   * Maneja el proceso de inicio de sesión.
-   *
-   * Realiza las siguientes acciones:
-   * - Valida campos de entrada localmente.
-   * - Llama al endpoint `signin` para autenticación.
-   * - Almacena los tokens (access y refresh) usando el contexto `useAuth`.
-   * - Muestra mensajes de error o éxito mediante `Toast`.
-   */
-  const handleLogin = async () => {
-    console.log("Intentando login con:", { email, password, totp });
+	/**
+	 * Maneja el proceso de inicio de sesión.
+	 *
+	 * Realiza las siguientes acciones:
+	 * - Valida campos de entrada localmente.
+	 * - Llama al endpoint `signin` para autenticación.
+	 * - Almacena los tokens (access y refresh) usando el contexto `useAuth`.
+	 * - Muestra mensajes de error o éxito mediante `Toast`.
+	 */
+	const handleLogin = async () => {
+		console.log("Intentando login con:", { email, password, totp });
 
-    // Validaciones básicas de campos
-    if (!email || !password || !totp) {
-      setToastMessage("Todos los campos son obligatorios.");
-      setToastType("error");
-      return;
-    }
-    if (!validateEmail(email)) {
-      setToastMessage("Correo inválido.");
-      setToastType("error");
-      return;
-    }
-    if (password.length < 8) {
-      setToastMessage("La contraseña debe tener al menos 8 caracteres.");
-      setToastType("error");
-      return;
-    }
-    if (totp.length !== 6 || !/^\d{6}$/.test(totp)) {
-      setToastMessage("El código TOTP debe tener 6 dígitos numéricos.");
-      setToastType("error");
-      return;
-    }
+		// Validaciones básicas de campos
+		if (!email || !password || !totp) {
+			setToastMessage("Todos los campos son obligatorios.");
+			setToastType("error");
+			return;
+		}
+		if (!validateEmail(email)) {
+			setToastMessage("Correo inválido.");
+			setToastType("error");
+			return;
+		}
+		if (password.length < 8) {
+			setToastMessage("La contraseña debe tener al menos 8 caracteres.");
+			setToastType("error");
+			return;
+		}
+		if (totp.length !== 6 || !/^\d{6}$/.test(totp)) {
+			setToastMessage("El código TOTP debe tener 6 dígitos numéricos.");
+			setToastType("error");
+			return;
+		}
 
-    // Llamada a la API y manejo de tokens
-    try {
-      const res = await signin(email, password, totp);
-      const { access_token, refresh_token } = res.data;
+		// Llamada a la API y manejo de tokens
+		try {
+			const res = await signin(email, password, totp);
+			const { access_token, refresh_token } = res.data;
 
-      console.log("Tokens recibidos:", res.data);
-      setTokens(access_token, refresh_token);
+			console.log("Tokens recibidos:", res.data);
+			setTokens(access_token, refresh_token);
 
-      setToastMessage("Inicio de sesión exitoso.");
-      setToastType("success");
+			setToastMessage("Inicio de sesión exitoso.");
+			setToastType("success");
 
-      setTimeout(() => {
-        setToastMessage("");
-        navigate("/dashboard");
-      }, 1500);
-    } catch (e) {
-      setToastMessage(`Error al iniciar sesión. Revisa tus datos. ${e}`);
-      setToastType("error");
-    }
-  };
+			loadUsername(accessToken)
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h2 className={styles.title}>Login</h2>
+			setTimeout(() => {
+				setToastMessage("");
+				navigate("/chat");
+			}, 1500);
+		} catch (e) {
+			setToastMessage(`Error al iniciar sesión. Revisa tus datos. ${e}`);
+			setToastType("error");
+		}
+	};
 
-        <div className={styles.form}>
-          <input
-            placeholder="Correo electrónico"
-            onChange={(e) => setEmail(e.target.value)}
-            className={styles.input}
-          />
-          <input
-            placeholder="Contraseña"
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            className={styles.input}
-          />
-          <input
-            placeholder="Código TOTP"
-            onChange={(e) => setTotp(e.target.value)}
-            className={styles.input}
-          />
-          <button onClick={handleLogin} className={styles.button}>
-            Iniciar sesión
-          </button>
-          <button
-            onClick={() => (window.location.href = googleLoginUrl)}
-            className={styles.googleButton}
-          >
-            Iniciar sesión con Google
-          </button>
-        </div>
-      </div>
+	return (
+		<div className={styles.container}>
+			<div className={styles.card}>
+				<h2 className={styles.title}>Login</h2>
 
-      {toastMessage && (
-        <Toast
-          message={toastMessage}
-          type={toastType}
-          onClose={() => setToastMessage("")}
-        />
-      )}
-    </div>
-  );
+				<div className={styles.form}>
+					<input
+						placeholder="Correo electrónico"
+						onChange={(e) => setEmail(e.target.value)}
+						className={styles.input}
+					/>
+					<input
+						placeholder="Contraseña"
+						type="password"
+						onChange={(e) => setPassword(e.target.value)}
+						className={styles.input}
+					/>
+					<input
+						placeholder="Código TOTP"
+						onChange={(e) => setTotp(e.target.value)}
+						className={styles.input}
+					/>
+					<button onClick={handleLogin} className={styles.button}>
+						Iniciar sesión
+					</button>
+					<button
+						onClick={() => (window.location.href = googleLoginUrl)}
+						className={styles.googleButton}
+					>
+						Iniciar sesión con Google
+					</button>
+				</div>
+			</div>
+
+			{toastMessage && (
+				<Toast
+					message={toastMessage}
+					type={toastType}
+					onClose={() => setToastMessage("")}
+				/>
+			)}
+		</div>
+	);
 }

@@ -27,8 +27,11 @@ export function Header() {
         )}
         {accessToken && (
           <>
-            <Link to="/dashboard" className={styles.link}>
-              Dashboard
+            <Link to="/chat" className={styles.link}>
+              P2P Chat
+            </Link>
+            <Link to="/group-chat" className={styles.link}>
+              Group Chat
             </Link>
             <button onClick={handleLogout} className={styles.logoutButton}>
               Logout

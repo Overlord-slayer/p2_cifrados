@@ -7,8 +7,7 @@ import os
 
 from app.auth.google.routes import router as google_login_router
 from app.auth.google.callback import router as google_callback_router
-from app.endpoints.group_chat import router as group_chat_router
-from app.endpoints.p2p_chat import router as p2p_chat_router
+from app.endpoints.chat import router as chat_router
 from app.endpoints.etc import router as etc_chat_router
 
 from dotenv import load_dotenv
@@ -28,8 +27,7 @@ async def on_shutdown():
 	print("App is shutting down...")
 
 app.include_router(etc_chat_router)
-app.include_router(p2p_chat_router)
-app.include_router(group_chat_router)
+app.include_router(chat_router)
 app.include_router(auth.router)
 app.include_router(google_login_router)
 app.include_router(google_callback_router)

@@ -5,16 +5,16 @@ from typing import *
 from app.auth.dependencies import get_current_user
 from app.schemas.schemas import *
 
-import app.globals as globals
-from app.db.db import *
+from sqlalchemy.orm import Session
+from fastapi import Depends, HTTPException
+from app.db.db import get_db
+from app.model.models import *
 
 load_dotenv()
 
 router = APIRouter(prefix="", tags=["chat"])
 
-@router.get("/users/{user}/key")
-def get_public_key(username: str = Depends(get_current_user)):
-	return {}
+import app.globals as globals
 
 @router.post("/transactions")
 def save_transaction(user_destino: str, message: str, username: str = Depends(get_current_user)):
