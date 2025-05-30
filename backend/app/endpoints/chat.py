@@ -10,6 +10,8 @@ from fastapi import Depends, HTTPException
 from app.db.db import get_db
 from app.model.models import *
 
+from .chain import *
+
 load_dotenv()
 
 router = APIRouter(prefix="", tags=["chat"])
@@ -68,6 +70,10 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 		raise HTTPException(status_code=404, detail="User not found")
 
 	msg = send_group_message(db, sender, group_name, payload)
+
+	manager = BlockchainManager(db)
+	manager.add_message("group", msg.id)
+
 	return msg
 
 @router.get("/messages/{user_origen}/{user_destino}", response_model=List[MessageResponse])
@@ -88,4 +94,8 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 		raise HTTPException(status_code=404, detail="User not found")
 
 	msg = send_p2p_message(db, sender, receiver, payload)
+
+	manager = BlockchainManager(db)
+	manager.add_message("p2p", msg.id)
+
 	return msg
