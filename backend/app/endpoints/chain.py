@@ -86,6 +86,6 @@ class BlockchainManager:
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/transactions")
-def get_transactions(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_transactions(db: Session = Depends(get_db)):
 	manager = BlockchainManager(db)
 	return manager.get_all_blocks()
