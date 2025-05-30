@@ -43,7 +43,8 @@ def api_get_group_messages(group_name: str, username: str = Depends(get_current_
 
 @router.post("/group-messages/create")
 def api_create_group(group_name: CreateGroupPayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	group = create_group(db, group_name.name)
+	user_id = get_user_id_by_email(db, username)
+	group = create_group(db, group_name.name, user_id)
 	return group.id
 
 @router.post("/group-messages/{group_name}/add")
@@ -51,6 +52,11 @@ def api_add_to_group(group_name: str, user_destino: CreateGroupPayload, username
 	user_receiver = get_user_id_by_email(db, user_destino.name)
 	group_user = add_user_to_group(db, user_receiver, group_name)
 	return group_user
+
+@router.get("/group-messages/{group_name}/owner")
+def api_add_to_group(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	owner = get_group_owner_email(group_name)
+	return owner
 
 @router.get("/group-messages/{group_name}", response_model=List[MessageResponse])
 def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -46,9 +46,11 @@ class Group(Base):
 	__tablename__ = "groups"
 
 	id = Column(String, primary_key=True, index=True)
+	owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
 	shared_aes_key = Column(String, nullable=False)
 
+	owner = relationship("User", backref="owned_groups")
 	users = relationship("GroupUser", back_populates="group", cascade="all, delete-orphan")
 	messages = relationship("GroupMessage", back_populates="group", cascade="all, delete-orphan")
 
@@ -214,10 +216,16 @@ def get_user_groups(db: Session, user_id: int):
 		.all()
 	)
 
-def create_group(db: Session, name: str) -> Group:
+def create_group(db: Session, name: str, user_id) -> Group:
 	aes_key = bytes_to_str(get_random_bytes(32))
-	new_group = Group(id=name, shared_aes_key=aes_key)
+	new_group = Group(id=name, owner_id=user_id, shared_aes_key=aes_key)
 	db.add(new_group)
 	db.commit()
 	db.refresh(new_group)
 	return new_group
+
+def get_group_owner_email(db: Session, group_name: str) -> str | None:
+	group = db.query(Group).filter(Group.id == group_name).first()
+	if group and group.owner:
+		return group.owner.email
+	return None
