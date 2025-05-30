@@ -71,13 +71,13 @@ export default function ChatPage() {
 
 			<div className="chat-panel">
 				<header className="chat-header">
-				<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
+					<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
 				</header>
 
 				{active && (
 					<>
-						<main className="chat-messages">
-							{messages.map(msg => (
+						<main className="chat-messages" style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+							{messages.slice().map(msg => (
 								<MessageBubble
 									key={`${msg.timestamp}-${msg.sender}`}
 									msg={msg}
