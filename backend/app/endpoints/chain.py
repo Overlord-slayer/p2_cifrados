@@ -83,9 +83,36 @@ class BlockchainManager:
 
 		return result
 
+	def verify_blockchain(self):
+		blocks = self.db.query(Block).order_by(Block.id.asc()).all()
+
+		if not blocks:
+			return "No blocks found. Blockchain is empty."
+
+		for i, block in enumerate(blocks):
+			# Recompute the hash from message contents and previous hash
+			messages = sorted(block.messages, key=lambda m: m.id)  # consistent order
+			message_data = [f"{m.message_type}:{m.message_id}" for m in messages]
+			previous_hash = blocks[i - 1].hash if i > 0 else "0"
+			block_string = json.dumps(message_data) + previous_hash
+			recalculated_hash = hashlib.sha256(block_string.encode()).hexdigest()
+
+			if block.hash != recalculated_hash:
+				return False, f"Block {block.id} hash mismatch! Stored: {block.hash}, Recalculated: {recalculated_hash}"
+
+			if i > 0 and block.previous_hash != blocks[i - 1].hash:
+				return f"Block {block.id} previous_hash mismatch with Block {blocks[i - 1].id}"
+
+		return "Blockchain is valid."
+
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/transactions")
 def get_transactions(db: Session = Depends(get_db)):
 	manager = BlockchainManager(db)
 	return manager.get_all_blocks()
+
+@router.get("/verify-transactions")
+def get_transactions(db: Session = Depends(get_db)):
+	manager = BlockchainManager(db)
+	return manager.verify_blockchain()
