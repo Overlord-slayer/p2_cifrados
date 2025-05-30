@@ -56,6 +56,8 @@ def api_add_to_group(group_name: str, user_destino: CreateGroupPayload, username
 @router.get("/group-messages/{group_name}/owner")
 def api_add_to_group(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	owner = get_group_owner_email(group_name)
+	if owner != username:
+		raise HTTPException(status_code=404, detail=f"You are not the owner, this is: {owner}")
 	return owner
 
 @router.get("/group-messages/{group_name}", response_model=List[MessageResponse])
