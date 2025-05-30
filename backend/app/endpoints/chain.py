@@ -87,7 +87,7 @@ class BlockchainManager:
 		blocks = self.db.query(Block).order_by(Block.id.asc()).all()
 
 		if not blocks:
-			return "No blocks found. Blockchain is empty."
+			return True, "No blocks found. Blockchain is empty."
 
 		for i, block in enumerate(blocks):
 			# Recompute the hash from message contents and previous hash
@@ -101,9 +101,9 @@ class BlockchainManager:
 				return False, f"Block {block.id} hash mismatch! Stored: {block.hash}, Recalculated: {recalculated_hash}"
 
 			if i > 0 and block.previous_hash != blocks[i - 1].hash:
-				return f"Block {block.id} previous_hash mismatch with Block {blocks[i - 1].id}"
+				return False, f"Block {block.id} previous_hash mismatch with Block {blocks[i - 1].id}"
 
-		return "Blockchain is valid."
+		return True, "Blockchain is valid."
 
 router = APIRouter(prefix="", tags=["chat"])
 
