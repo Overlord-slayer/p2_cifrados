@@ -23,8 +23,13 @@ const MessageInput: React.FC<Props> = ({ onSend }) => {
 				type="text"
 				placeholder="Type a message..."
 				value={text}
-				onChange={e => setText(e.target.value)}
 				className="input-field"
+				onChange={e => setText(e.target.value)}
+				onKeyDown={(e) => {
+					if (e.key === 'Enter') {
+						handleSend();
+					}
+				}}
 			/>
 			<button onClick={handleSend} className="send-button">
 				<HiOutlinePaperAirplane className="send-icon" />

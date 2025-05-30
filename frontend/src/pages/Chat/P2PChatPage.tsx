@@ -27,8 +27,8 @@ export default function ChatPage() {
 				Authorization: `Bearer ${me}`
 			}
 		})
-		.then(res => setContacts(res.data))
-		.catch(err => console.error('Error fetching users:', err))
+			.then(res => setContacts(res.data))
+			.catch(err => console.error('Error fetching users:', err))
 	}, [])
 
 	useEffect(() => {
@@ -38,8 +38,8 @@ export default function ChatPage() {
 				Authorization: `Bearer ${me}`
 			}
 		})
-		.then(res => setMessages(res.data))
-		.catch(err => console.error('Error fetching messages:', err))
+			.then(res => setMessages(res.data))
+			.catch(err => console.error('Error fetching messages:', err))
 	}, [active, me, setMessages])
 
 	const send = async (text: string) => {
@@ -76,7 +76,7 @@ export default function ChatPage() {
 
 				{active && (
 					<>
-						<main className="chat-messages" style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+						<main className="chat-messages" style={{ display: 'flex', flexDirection: 'column-reverse', gap: '8px', overflowY: 'auto' }}>
 							{messages.slice().map(msg => (
 								<MessageBubble
 									key={`${msg.timestamp}-${msg.sender}`}

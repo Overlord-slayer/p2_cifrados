@@ -229,3 +229,15 @@ def get_group_owner_email(db: Session, group_name: str) -> str | None:
 	if group and group.owner:
 		return group.owner.email
 	return None
+
+def get_group_non_participants(db: Session, group_name:str):
+	group = db.query(Group).filter(Group.id == group_name).first()
+
+	member_user_ids = db.query(GroupUser.user_id).filter(GroupUser.group_name == group_name).subquery()
+
+	users = db.query(User).filter(
+		User.id != group.owner_id,
+		~User.id.in_(member_user_ids)
+	).all()
+
+	return [{"email": user.email} for user in users]
