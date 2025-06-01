@@ -8,11 +8,9 @@ import os
 from app.auth.google.routes import router as google_login_router
 from app.auth.google.callback import router as google_callback_router
 from app.endpoints.chat import router as chat_router
-from app.endpoints.etc import router as etc_chat_router
+from app.endpoints.chain import router as etc_chat_router
 
 from dotenv import load_dotenv
-
-import app.globals as globals
 
 load_dotenv()
 

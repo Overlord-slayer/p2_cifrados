@@ -82,6 +82,27 @@ class GroupMessage(Base):
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_group_messages")
 	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
 
+class Block(Base):
+	__tablename__ = "blocks"
+
+	id = Column(Integer, primary_key=True)
+	hash = Column(String, unique=True)
+	previous_hash = Column(String, nullable=True)
+	timestamp = Column(DateTime, default=datetime.utcnow)
+
+	messages = relationship("BlockMessage", back_populates="block")
+
+
+class BlockMessage(Base):
+	__tablename__ = "blockchain_messages"
+
+	id = Column(Integer, primary_key=True)
+	message_type = Column(String)  # "p2p" or "group"
+	message_id = Column(Integer)  # Reference to either P2P_Message.id or GroupMessage.id
+
+	block_id = Column(Integer, ForeignKey("blocks.id"))
+	block = relationship("Block", back_populates="messages")
+
 class CreateGroupPayload(BaseModel):
 	name: str
 
@@ -157,9 +178,9 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 				signature = "True"
 
 		messages.append({
-			"sender":   sender.email,
-			"receiver": receiver.email,
-			"message" : decrypted_message,
+			"sender":    sender.email,
+			"receiver":  receiver.email,
+			"message" :  decrypted_message,
 			"signature": signature,
 			"hash": msg.hash,
 			"timestamp": msg.timestamp,
