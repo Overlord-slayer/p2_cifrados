@@ -8,5 +8,6 @@ export interface MessageResponse {
   receiver: string
   message: string
   signature?: string
+  hash: string
   timestamp: string  // ISO string, p.ej. "2025-05-21T17:32:00.000Z"
 }

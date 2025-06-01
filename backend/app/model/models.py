@@ -8,7 +8,8 @@ from app.schemas.schemas import *
 from typing import Optional
 
 from app.crypto.crypto import *
-from app.crypto.sign_verify import *
+from app.crypto.signing import *
+from app.crypto.hashing import *
 
 class User(Base):
 	__tablename__ = "users"
@@ -35,6 +36,7 @@ class P2P_Message(Base):
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
+	hash = Column(Text, nullable=False)
 	signature = Column(Text)
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
@@ -73,6 +75,7 @@ class GroupMessage(Base):
 	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	group_name  = Column(String, ForeignKey("groups.id"), nullable=False)
 
+	hash = Column(Text, nullable=False)
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -118,7 +121,8 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 		sender_id=sender_id,
 		receiver_id=receiver_id,
 		message=encrypted_message,
-		signature=signature
+		signature=signature,
+		hash=generate_hash(bytes_to_str(encrypted_message))
 	)
 	db.add(msg)
 	db.commit()
@@ -157,6 +161,7 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 			"receiver": receiver.email,
 			"message" : decrypted_message,
 			"signature": signature,
+			"hash": msg.hash,
 			"timestamp": msg.timestamp,
 		})
 	return messages
@@ -179,7 +184,8 @@ def send_group_message(db: Session, sender_id: int, group_name: str, payload: Me
 	group_message = GroupMessage(
 		sender_id=sender_id,
 		group_name=group_name,
-		message=encrypted_message
+		message=encrypted_message,
+		hash=generate_hash(bytes_to_str(encrypted_message))
 	)
 	db.add(group_message)
 	db.commit()
@@ -204,6 +210,7 @@ def get_group_messages(db: Session, group_name: int):
 		"receiver": msg.group_name,
 		"message": descifrar_mensaje_grupal(msg.message, aes_key),
 		"signature": None,
+		"hash": msg.hash,
 		"timestamp": msg.timestamp,
 	} for msg in data]
 	return messages

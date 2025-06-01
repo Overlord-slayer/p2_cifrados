@@ -105,3 +105,32 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 
 	msg = send_p2p_message(db, sender, receiver, payload)
 	return msg
+
+@router.post("/messages/{user_origen}/{user_destino}/verify-hash")
+def api_verify_p2p_hash(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_sender = get_user_id_by_email(db, user_origen)
+	user_receiver = get_user_id_by_email(db, user_destino)
+	if not user_sender or not user_receiver:
+		raise HTTPException(status_code=404, detail="User not found")
+
+	items = get_p2p_messages_by_user(db, user_sender, user_receiver)
+	messages = [item["message"] for item in items]
+	hashes = [item["hash"] for item in items]
+	for message, hash in zip(messages, hashes):
+		if (not verify_hash(str_to_bytes(message), str_to_bytes(hash))):
+			return False, "Hashing failed."
+	return True, "Hashes verified"
+
+@router.post("/group-messages/{group_name}/verify-hash")
+def api_verify_group_hash(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+	user_sender = get_user_id_by_email(db, username)
+	if not user_sender:
+		raise HTTPException(status_code=404, detail="User not found")
+
+	items = get_group_messages(db, group_name)
+	messages = [item["message"] for item in items]
+	hashes = [item["hash"] for item in items]
+	for message, hash in zip(messages, hashes):
+		if (not verify_hash(str_to_bytes(message), str_to_bytes(hash))):
+			return False, "Hashing failed."
+	return True, "Hashes verified"
