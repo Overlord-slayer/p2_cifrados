@@ -74,18 +74,18 @@ def api_add_to_group(group_name: str, username: str = Depends(get_current_user),
 def api_get_group_messages(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, username)
 	if not user_sender:
-		raise HTTPException(status_code=404, detail="User not found")
+		raise HTTPException(status_code=404, detail=f"User not found: {user_sender}")
 
 	messages = get_group_messages(db, group_name)
 	return messages
 
 @router.post("/group-messages/{group_name}")
 def api_send_group_message(group_name: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	sender = get_user_id_by_email(db, username)
-	if not sender:
-		raise HTTPException(status_code=404, detail="User not found")
+	user_sender = get_user_id_by_email(db, username)
+	if not user_sender:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_sender}")
 
-	msg = send_group_message(db, sender, group_name, payload)
+	msg = send_group_message(db, user_sender, group_name, payload)
 
 	manager = BlockchainManager(db)
 	manager.add_message("group", msg.id)
@@ -96,50 +96,60 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 def api_get_messages(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, user_origen)
 	user_receiver = get_user_id_by_email(db, user_destino)
-	if not user_sender or not user_receiver:
-		raise HTTPException(status_code=404, detail="User not found")
+	if not user_sender:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_sender}")
+	if not user_receiver:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_receiver}")
 
 	messages = get_p2p_messages_by_user(db, user_sender, user_receiver)
 	return messages
 
 @router.post("/messages/{user_destino}")
 def api_send_message(user_destino: str, payload: MessagePayload, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	sender = get_user_id_by_email(db, username)
-	receiver = get_user_id_by_email(db, user_destino)
-	if not sender or not receiver:
-		raise HTTPException(status_code=404, detail="User not found")
+	user_sender = get_user_id_by_email(db, username)
+	user_receiver = get_user_id_by_email(db, user_destino)
+	if not user_sender:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_sender}")
+	if not user_receiver:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_receiver}")
 
-	msg = send_p2p_message(db, sender, receiver, payload)
+	msg = send_p2p_message(db, user_sender, user_receiver, payload)
 	manager = BlockchainManager(db)
 	manager.add_message("p2p", msg.id)
 
 	return msg
 
 @router.post("/messages/{user_origen}/{user_destino}/verify-hash")
-def api_verify_p2p_hash(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, user_origen)
 	user_receiver = get_user_id_by_email(db, user_destino)
-	if not user_sender or not user_receiver:
-		raise HTTPException(status_code=404, detail="User not found")
+	if not user_sender:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_origen}")
+	if not user_receiver:
+		raise HTTPException(status_code=404, detail=f"User not found: {user_destino}")
 
 	items = get_p2p_messages_by_user(db, user_sender, user_receiver)
 	messages = [item["message"] for item in items]
 	hashes = [item["hash"] for item in items]
+
+	errors = 0
 	for message, hash in zip(messages, hashes):
-		if (not verify_hash(str_to_bytes(message), str_to_bytes(hash))):
-			return False, "Hashing failed."
-	return True, "Hashes verified"
+		if (not verify_hash(message, hash)):
+			errors += 1
+	if errors > 0:
+		return False, f"Hashing failed for {errors}/{len(items)} items."
+	return True, f"Hashes verified for {len(items)} items."
 
 @router.post("/group-messages/{group_name}/verify-hash")
-def api_verify_group_hash(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-	user_sender = get_user_id_by_email(db, username)
-	if not user_sender:
-		raise HTTPException(status_code=404, detail="User not found")
-
+def api_verify_group_hash(group_name: str, db: Session = Depends(get_db)):
 	items = get_group_messages(db, group_name)
 	messages = [item["message"] for item in items]
 	hashes = [item["hash"] for item in items]
+
+	errors = 0
 	for message, hash in zip(messages, hashes):
-		if (not verify_hash(str_to_bytes(message), str_to_bytes(hash))):
-			return False, "Hashing failed."
-	return True, "Hashes verified"
+		if (not verify_hash(message, hash)):
+			errors += 1
+	if errors > 0:
+		return False, f"Hashing failed for {errors}/{len(items)} items."
+	return True, f"Hashes verified for {len(items)} items."

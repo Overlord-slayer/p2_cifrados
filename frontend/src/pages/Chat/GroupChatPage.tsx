@@ -56,6 +56,10 @@ export default function GroupChatPage() {
 				headers: { Authorization: `Bearer ${me}` }
 			})
 			alert(`✅ ${selectedUser} agregado al grupo`)
+			api.get(`/group-messages/${active}/users`, {
+				headers: { Authorization: `Bearer ${me}` }
+			}).then(res => setAvailableUsers(res.data))
+				.catch(err => console.error('Error fetching users:', err))
 			setSelectedUser('')
 		} catch (err) {
 			console.error('Error adding user to group:', err)
@@ -64,6 +68,7 @@ export default function GroupChatPage() {
 	}
 
 	useEffect(() => {
+		if (!active) return
 		api.get(`/users/${getUsername()}/groups`, {
 			headers: { Authorization: `Bearer ${me}` }
 		}).then(res => setContacts(res.data))
@@ -79,6 +84,7 @@ export default function GroupChatPage() {
 	}, [active, iamowner])
 
 	useEffect(() => {
+		if (!active) return
 		api.get(`/group-messages/${active}/users`, {
 			headers: { Authorization: `Bearer ${me}` }
 		}).then(res => setAvailableUsers(res.data))
@@ -266,7 +272,7 @@ export default function GroupChatPage() {
 
 			<div className="chat-panel">
 				<header className="chat-header">
-					{active && <span>🔒 {active}</span>}
+					{active && <span>{active}</span>}
 				</header>
 
 				{active && (

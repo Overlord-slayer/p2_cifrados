@@ -81,7 +81,7 @@ def descifrar_mensaje_individual(data_str: str, clave_privada_rsa_pem: bytes) ->
 		padding_len = mensaje_padded[-1]
 		return mensaje_padded[:-padding_len].decode()
 	except Exception as e:
-		print("\n"+"-"*50+"\n"+str(e)+"\n"+"-"*50)
+		print("\n"+"-"*20+"Decryption"+"-"*20+"\n"+str(e)+"\n"+"-"*50)
 		return data_str
 
 def cifrar_mensaje_grupal(mensaje: str, clave_simetrica: bytes) -> str:
@@ -106,7 +106,7 @@ def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
 		return data_str
 
 def bytes_to_str(data: bytes) -> str:
-	return base64.urlsafe_b64encode(data).decode()
+	return base64.b64encode(data).decode()
 
 def str_to_bytes(data_str: str) -> bytes:
-	return base64.urlsafe_b64decode(data_str)
+	return base64.b64decode(data_str)

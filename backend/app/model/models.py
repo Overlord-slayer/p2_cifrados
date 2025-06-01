@@ -115,6 +115,7 @@ class MessageResponse(BaseModel):
 	receiver: str
 	message: str
 	signature: Optional[str] = None
+	hash: str
 	timestamp: datetime
 
 def get_user_id_by_email(db: Session, email: str) -> int | None:
@@ -143,12 +144,11 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 		receiver_id=receiver_id,
 		message=encrypted_message,
 		signature=signature,
-		hash=generate_hash(bytes_to_str(encrypted_message))
+		hash=generate_hash(payload.message)
 	)
 	db.add(msg)
 	db.commit()
 	db.refresh(msg)
-	msg.message = payload.message
 	return msg
 
 def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
@@ -175,7 +175,7 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 		if (msg.signature):
 			pub_key = str_to_bytes(sender.public_key)
 			if (verify_signature(msg.message, msg.signature, pub_key)):
-				signature = "True"
+				signature = "Signed"
 
 		messages.append({
 			"sender":    sender.email,
@@ -206,7 +206,7 @@ def send_group_message(db: Session, sender_id: int, group_name: str, payload: Me
 		sender_id=sender_id,
 		group_name=group_name,
 		message=encrypted_message,
-		hash=generate_hash(bytes_to_str(encrypted_message))
+		hash=generate_hash(payload.message)
 	)
 	db.add(group_message)
 	db.commit()

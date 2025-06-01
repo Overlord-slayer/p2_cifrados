@@ -1,6 +1,6 @@
 /* contenedor principal */
 .sidebar {
-  width: 240px;
+  width: fit-content;
   background-color: #1a1a1a;
   padding: 1rem;
   color: #fff;

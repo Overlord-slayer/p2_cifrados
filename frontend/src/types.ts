@@ -7,7 +7,7 @@ export interface MessageResponse {
   sender: string
   receiver: string
   message: string
-  signature?: string
+  signature?: boolean
   hash: string
   timestamp: string  // ISO string, p.ej. "2025-05-21T17:32:00.000Z"
 }

@@ -12,7 +12,7 @@ interface Props {
 export default function MessageBubble({ msg, me }: Props) {
 	return (
 		<div className={`bubble-wrapper ${me ? 'right' : 'left'}`}>
-			<div className={`bubble ${me ? 'bubble-me' : 'bubble-other'}`}>
+			<div className={`bubble ${me ? 'bubble-me' : 'bubble-other'} ${msg.signature ? 'bubble-signed' : ''}`}>
 				{msg.message}
 				<div className="bubble-meta">
 					{msg.signature && <HiOutlinePencilAlt className="bubble-icon" />}

@@ -16,5 +16,10 @@ def verify_signature(data: str, signature_b64: str, public_key_pem: bytes) -> bo
 		signature = base64.b64decode(signature_b64)
 		pkcs1_15.new(public_key).verify(hash_obj, signature)
 		return True
-	except (ValueError, TypeError):
+	except Exception as e:
+		print("\n"+"-"*20+"Signature"+"-"*21)
+		print(e)
+		print(data)
+		print(signature_b64)
+		print("-"*50)
 		return False

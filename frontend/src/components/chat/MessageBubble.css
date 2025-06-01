@@ -23,6 +23,12 @@
   color: white;
 }
 
+.bubble-signed {
+	border-color: aquamarine;
+	border-width: 2px;
+	border-style: solid;
+}
+
 .bubble-other {
   background-color: #333;
   color: white;

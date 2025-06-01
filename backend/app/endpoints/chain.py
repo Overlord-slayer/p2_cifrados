@@ -103,7 +103,7 @@ class BlockchainManager:
 			if i > 0 and block.previous_hash != blocks[i - 1].hash:
 				return False, f"Block {block.id} previous_hash mismatch with Block {blocks[i - 1].id}"
 
-		return True, "Blockchain is valid."
+		return True, f"Blockchain is valid. Calculated {len(blocks)} blocks."
 
 router = APIRouter(prefix="", tags=["chat"])
 

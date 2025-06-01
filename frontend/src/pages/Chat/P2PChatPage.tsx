@@ -22,6 +22,7 @@ export default function ChatPage() {
 	const setMessages = useChatStore(state => state.setMessages)
 
 	useEffect(() => {
+		if (!getUsername()) return
 		api.get('/users', {
 			headers: {
 				Authorization: `Bearer ${me}`
@@ -71,7 +72,7 @@ export default function ChatPage() {
 
 			<div className="chat-panel">
 				<header className="chat-header">
-					<span>{active ? `🔒 ${active}` : 'Selecciona un contacto'}</span>
+					<span>{active ? `${active}` : 'Selecciona un contacto'}</span>
 				</header>
 
 				{active && (
