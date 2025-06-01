@@ -68,7 +68,7 @@ export default function GroupChatPage() {
 	}
 
 	useEffect(() => {
-		if (!active) return
+		if (getUsername().length == 0) return
 		api.get(`/users/${getUsername()}/groups`, {
 			headers: { Authorization: `Bearer ${me}` }
 		}).then(res => setContacts(res.data))
@@ -80,7 +80,7 @@ export default function GroupChatPage() {
 		api.get(`/group-messages/${active}/owner`, {
 			headers: { Authorization: `Bearer ${me}` }
 		}).then(res => setIsOwner(true))
-			.catch(err => console.error('Error validating ownership:', err))
+			.catch(err => console.log('Validating ownership:', err.response.data.detail))
 	}, [active, iamowner])
 
 	useEffect(() => {
@@ -88,7 +88,7 @@ export default function GroupChatPage() {
 		api.get(`/group-messages/${active}/users`, {
 			headers: { Authorization: `Bearer ${me}` }
 		}).then(res => setAvailableUsers(res.data))
-			.catch(err => console.error('Error fetching users:', err))
+			.catch(err => console.log('Fetching users:', err.response.data.detail))
 	}, [active])
 
 	useEffect(() => {
