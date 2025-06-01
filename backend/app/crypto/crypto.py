@@ -35,16 +35,16 @@ def decrypt_bytes(data: bytes) -> bytes:
 	return decrypted
 
 def generate_rsa_keys():
-	key = ECC.generate(curve='P-256')
-	private_pem = key.export_key(format='PEM')
-	public_pem = key.public_key().export_key(format='PEM')
-	return private_pem, public_pem
-
-def generate_ecc_keys():
 	key = RSA.generate(2048)
 	private_pem = key.export_key()
 	public_pem = key.publickey().export_key()
-	return bytes_to_str(private_pem), bytes_to_str(public_pem)
+	return str_to_bytes(private_pem), str_to_bytes(public_pem)
+
+def generate_ecc_keys():
+	key = ECC.generate(curve='P-256')
+	private_pem = key.export_key(format='DER')
+	public_pem = key.public_key().export_key(format='DER')
+	return str_to_bytes(private_pem), str_to_bytes(public_pem)
 
 def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: bytes) -> str:
 	# Genera clave AES-256 aleatoria
@@ -112,7 +112,11 @@ def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
 		return data_str
 
 def bytes_to_str(data: bytes) -> str:
+	if isinstance(data, str):
+		return data
 	return base64.b64encode(data).decode()
 
 def str_to_bytes(data_str: str) -> bytes:
+	if isinstance(data_str, bytes):
+		return data_str
 	return base64.b64decode(data_str)

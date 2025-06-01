@@ -137,9 +137,9 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 
 	signature = None
 	if (payload.signed):
-		private_key_encrypted = str_to_bytes(sender.private_key)
-		private_key = decrypt_bytes(private_key_encrypted)
-		signature = sign_data(encrypted_message, private_key)
+		private_ecc_key_encrypted = str_to_bytes(sender.private_ecc_key)
+		private_ecc_key = decrypt_bytes(private_ecc_key_encrypted)
+		signature = sign_data_ecdsa(encrypted_message, private_ecc_key)
 
 	msg = P2P_Message(
 		sender_id=sender_id,
@@ -175,8 +175,8 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 
 		signature = None
 		if (msg.signature):
-			pub_key = str_to_bytes(sender.public_key)
-			if (verify_signature(msg.message, msg.signature, pub_key)):
+			pub_ecc_key = str_to_bytes(sender.public_ecc_key)
+			if (verify_signature_ecdsa(msg.message, msg.signature, pub_ecc_key)):
 				signature = "Signed"
 
 		messages.append({
