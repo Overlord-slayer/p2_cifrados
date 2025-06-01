@@ -22,7 +22,6 @@ export default function ChatPage() {
 	const setMessages = useChatStore(state => state.setMessages)
 
 	useEffect(() => {
-		if (getUsername().length == 0) return
 		api.get('/users', {
 			headers: {
 				Authorization: `Bearer ${me}`

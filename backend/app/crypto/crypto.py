@@ -4,7 +4,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 
 from Crypto.Cipher import AES, PKCS1_OAEP
-from Crypto.PublicKey import RSA
+from Crypto.PublicKey import RSA, ECC
 from Crypto.Random import get_random_bytes
 
 from dotenv import load_dotenv
@@ -35,10 +35,16 @@ def decrypt_bytes(data: bytes) -> bytes:
 	return decrypted
 
 def generate_rsa_keys():
+	key = ECC.generate(curve='P-256')
+	private_pem = key.export_key(format='PEM')
+	public_pem = key.public_key().export_key(format='PEM')
+	return private_pem, public_pem
+
+def generate_ecc_keys():
 	key = RSA.generate(2048)
 	private_pem = key.export_key()
 	public_pem = key.publickey().export_key()
-	return private_pem, public_pem
+	return bytes_to_str(private_pem), bytes_to_str(public_pem)
 
 def cifrar_mensaje_individual(mensaje: str, clave_publica_rsa_pem: bytes) -> str:
 	# Genera clave AES-256 aleatoria

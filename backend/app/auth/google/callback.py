@@ -54,13 +54,18 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 		private_key, public_key = generate_rsa_keys()
 		private_key_encrypted = encrypt_bytes(private_key)
 
+		private_ecc_key, public_ecc_key = generate_ecc_keys()
+		private_ecc_key_encrypted = encrypt_bytes(private_ecc_key)
+
 		user = User(
 			email=email,
 			hashed_password="",
 			totp_secret=totp_secret,
 			is_google_account=True,
 			public_key=bytes_to_str(public_key),
-			private_key=bytes_to_str(private_key_encrypted)
+			private_key=bytes_to_str(private_key_encrypted),
+			public_ecc_key=bytes_to_str(public_ecc_key),
+			private_ecc_key=bytes_to_str(private_ecc_key_encrypted)
 		)
 		db.add(user)
 		db.commit()

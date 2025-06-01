@@ -88,7 +88,7 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 	msg = send_group_message(db, user_sender, group_name, payload)
 
 	manager = BlockchainManager(db)
-	manager.add_message("group", msg.id)
+	manager.add_message(False, msg.id)
 
 	return msg
 
@@ -115,7 +115,7 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 
 	msg = send_p2p_message(db, user_sender, user_receiver, payload)
 	manager = BlockchainManager(db)
-	manager.add_message("p2p", msg.id)
+	manager.add_message(True, msg.id)
 
 	return msg
 

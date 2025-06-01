@@ -21,6 +21,9 @@ class User(Base):
 
 	public_key = Column(String, nullable=False)
 	private_key = Column(String, nullable=False)
+	
+	public_ecc_key = Column(String, nullable=False)
+	private_ecc_key = Column(String, nullable=False)
 
 	is_active = Column(Boolean, default=True)
 
@@ -92,12 +95,11 @@ class Block(Base):
 
 	messages = relationship("BlockMessage", back_populates="block")
 
-
 class BlockMessage(Base):
 	__tablename__ = "blockchain_messages"
 
 	id = Column(Integer, primary_key=True)
-	message_type = Column(String)  # "p2p" or "group"
+	is_p2p = Column(Boolean)  # "0" or "1"
 	message_id = Column(Integer)  # Reference to either P2P_Message.id or GroupMessage.id
 
 	block_id = Column(Integer, ForeignKey("blocks.id"))

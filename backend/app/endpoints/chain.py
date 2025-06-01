@@ -19,12 +19,12 @@ class BlockchainManager:
 	def get_last_block(self):
 		return self.db.query(Block).order_by(Block.id.desc()).first()
 
-	def create_block(self, messages):
+	def create_block(self, messages: List[BlockMessage]):
 		last_block = self.get_last_block()
 		previous_hash = last_block.hash if last_block else "0"
 
 		# Simple hash based on message content
-		message_data = [f"{m.message_type}:{m.message_id}" for m in messages]
+		message_data = [f"{m.is_p2p}:{m.message_id}" for m in messages]
 		block_string = json.dumps(message_data) + previous_hash
 		block_hash = hashlib.sha256(block_string.encode()).hexdigest()
 
@@ -37,8 +37,8 @@ class BlockchainManager:
 		self.db.commit()
 		return new_block
 
-	def add_message(self, message_type, message_id):
-		new_msg = BlockMessage(message_type=message_type, message_id=message_id)
+	def add_message(self, is_p2p, message_id):
+		new_msg = BlockMessage(is_p2p=is_p2p, message_id=message_id)
 		self.db.add(new_msg)
 		self.db.commit()
 
@@ -57,7 +57,7 @@ class BlockchainManager:
 			self.db.commit()
 
 	def get_all_blocks(self):
-		blocks = (
+		blocks: List[Block] = (
 			self.db.query(Block)
 			.order_by(Block.id.asc())
 			.all()
@@ -75,7 +75,7 @@ class BlockchainManager:
 
 			for msg in block.messages:
 				block_info["messages"].append({
-					"type": msg.message_type,
+					"is_p2p": msg.is_p2p,
 					"message_id": msg.message_id
 				})
 
@@ -84,15 +84,15 @@ class BlockchainManager:
 		return result
 
 	def verify_blockchain(self):
-		blocks = self.db.query(Block).order_by(Block.id.asc()).all()
+		blocks: List[Block] = self.db.query(Block).order_by(Block.id.asc()).all()
 
 		if not blocks:
 			return True, "No blocks found. Blockchain is empty."
 
 		for i, block in enumerate(blocks):
 			# Recompute the hash from message contents and previous hash
-			messages = sorted(block.messages, key=lambda m: m.id)  # consistent order
-			message_data = [f"{m.message_type}:{m.message_id}" for m in messages]
+			messages: List[BlockMessage] = sorted(block.messages, key=lambda m: m.id)  # consistent order
+			message_data = [f"{m.is_p2p}:{m.message_id}" for m in messages]
 			previous_hash = blocks[i - 1].hash if i > 0 else "0"
 			block_string = json.dumps(message_data) + previous_hash
 			recalculated_hash = hashlib.sha256(block_string.encode()).hexdigest()
