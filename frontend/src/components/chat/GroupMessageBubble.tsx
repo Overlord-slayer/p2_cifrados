@@ -12,7 +12,7 @@ interface Props {
 export default function GroupMessageBubble({ msg, me }: Props) {
 	return (
 		<div className={`bubble-wrapper ${me ? 'right' : 'left'}`}>
-				<div className={`bubble ${me ? 'bubble-me' : 'bubble-other'}`}>
+			<div className={`bubble ${me ? 'bubble-me' : 'bubble-other'} ${msg.signature ? (msg.signature == "Signed" ? 'bubble-signed' : 'bubble-signed-error') : ''} `}>
 				{!me && (
 					<h4 style={{marginBottom: 10, fontWeight: 900 }}>
 						{msg.sender}

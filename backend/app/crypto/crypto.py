@@ -108,7 +108,7 @@ def descifrar_mensaje_grupal(data_str: str, clave_simetrica: bytes) -> str:
 		mensaje_cifrado = base64.b64decode(data['mensaje'])
 		return aesgcm.decrypt(nonce, mensaje_cifrado, None).decode()
 	except Exception as e:
-		print("\n"+"-"*50+"\n"+str(e)+"\n"+"-"*50)
+		print("\n"+"-"*20+"Decryption"+"-"*20+"\n"+str(e)+"\n"+"-"*50)
 		return data_str
 
 def bytes_to_str(data: bytes) -> str:

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import GroupMessageBubble from '../../components/chat/GroupMessageBubble'
+import SignToggle from '../../components/chat/SignToggle'
 import MessageInput from '../../components/chat/MessageInput'
 import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
@@ -12,6 +13,8 @@ export default function GroupChatPage() {
 	const me = useAuth(state => state.accessToken)!
 	const [contacts, setContacts] = useState<{ id: string }[]>([])
 	const [active, setActive] = useState<string>('')
+	const [sign, setSign] = useState<boolean>(false)
+
 	const [groupName, setGroupName] = useState('')
 	const [showModal, setShowModal] = useState(false)
 	const [iamowner, setIsOwner] = useState(false)
@@ -21,7 +24,7 @@ export default function GroupChatPage() {
 	const messages = useChatStore(state => state.messages)
 	const setMessages = useChatStore(state => state.setMessages)
 
-	const handleSend = async () => {
+	const createGroup = async () => {
 		try {
 			const res = await api.post('/group-messages/create', {
 				name: groupName
@@ -103,7 +106,7 @@ export default function GroupChatPage() {
 		try {
 			await api.post(`/group-messages/${active}`, {
 				message: text,
-				signed: false
+				signed: sign
 			}, {
 				headers: { Authorization: `Bearer ${me}` }
 			})
@@ -181,7 +184,7 @@ export default function GroupChatPage() {
 								}}>
 									Cancelar
 								</button>
-								<button onClick={handleSend} disabled={!groupName.trim()} style={{
+								<button onClick={createGroup} disabled={!groupName.trim()} style={{
 									padding: '8px 16px',
 									backgroundColor: '#25D366',
 									color: 'white',
@@ -288,6 +291,7 @@ export default function GroupChatPage() {
 						</main>
 
 						<div className="chat-footer">
+							<SignToggle enabled={sign} onToggle={setSign} />
 							<MessageInput onSend={send} />
 						</div>
 					</>

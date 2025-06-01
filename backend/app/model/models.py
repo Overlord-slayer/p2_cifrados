@@ -79,6 +79,7 @@ class GroupMessage(Base):
 	group_name  = Column(String, ForeignKey("groups.id"), nullable=False)
 
 	hash = Column(Text, nullable=False)
+	signature = Column(Text)
 	message = Column(Text, nullable=False)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -128,6 +129,10 @@ def get_email_by_user_id(db: Session, id: int) -> int | None:
 	user = db.query(User).filter(User.id == id).first()
 	return user.email if user else None
 
+def get_user_by_id(db: Session, id: int) -> User:
+	user = db.query(User).filter(User.id == id).first()
+	return user
+
 def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: MessagePayload):
 	sender = db.query(User).filter_by(id=sender_id).first()
 	receiver = db.query(User).filter_by(id=receiver_id).first()
@@ -154,8 +159,8 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 	return msg
 
 def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
-	user1_db = db.query(User).filter_by(id=user1_id).first()
-	user2_db = db.query(User).filter_by(id=user2_id).first()
+	user1_db = get_user_by_id(db, user1_id)
+	user2_db = get_user_by_id(db, user2_id)
 
 	data = db.query(P2P_Message).filter(
 		or_(
@@ -178,6 +183,8 @@ def get_p2p_messages_by_user(db: Session, user1_id: int, user2_id: int):
 			pub_ecc_key = str_to_bytes(sender.public_ecc_key)
 			if (verify_signature_ecdsa(msg.message, msg.signature, pub_ecc_key)):
 				signature = "Signed"
+			else:
+				signature = "Unauthentic"
 
 		messages.append({
 			"sender":    sender.email,
@@ -204,19 +211,25 @@ def send_group_message(db: Session, sender_id: int, group_name: str, payload: Me
 	aes_key = str_to_bytes(aes_key_string)
 	encrypted_message = cifrar_mensaje_grupal(payload.message, aes_key)
 
+	signature = None
+	if (payload.signed):
+		sender = get_user_by_id(db, sender_id)
+		private_ecc_key_encrypted = str_to_bytes(sender.private_ecc_key)
+		private_ecc_key = decrypt_bytes(private_ecc_key_encrypted)
+		signature = sign_data_ecdsa(encrypted_message, private_ecc_key)
+
 	group_message = GroupMessage(
 		sender_id=sender_id,
 		group_name=group_name,
 		message=encrypted_message,
+		signature=signature,
 		hash=generate_hash(payload.message)
 	)
 	db.add(group_message)
 	db.commit()
 	db.refresh(group_message)
 
-	result_message = group_message
-	result_message.message = payload.message
-	return result_message
+	return group_message
 
 def get_group_messages(db: Session, group_name: int):
 	data = (
@@ -228,14 +241,28 @@ def get_group_messages(db: Session, group_name: int):
 	aes_key_string = db.query(Group).filter_by(id=group_name).first().shared_aes_key
 	aes_key = str_to_bytes(aes_key_string)
 
-	messages = [{
-		"sender": get_email_by_user_id(db, msg.sender_id),
-		"receiver": msg.group_name,
-		"message": descifrar_mensaje_grupal(msg.message, aes_key),
-		"signature": None,
-		"hash": msg.hash,
-		"timestamp": msg.timestamp,
-	} for msg in data]
+	messages = []
+	for msg in data:
+		decrypted_message = descifrar_mensaje_grupal(msg.message, aes_key)
+		sender = get_user_by_id(db, msg.sender_id)
+
+		signature = None
+		if (msg.signature):
+			pub_ecc_key = str_to_bytes(sender.public_ecc_key)
+			if (verify_signature_ecdsa(msg.message, msg.signature, pub_ecc_key)):
+				signature = "Signed"
+			else:
+				signature = "Unauthentic"
+
+		messages.append({
+			"sender":    sender.email,
+			"receiver":  msg.group_name,
+			"message" :  decrypted_message,
+			"signature": signature,
+			"hash": msg.hash,
+			"timestamp": msg.timestamp,
+		})
+
 	return messages
 
 def get_user_groups(db: Session, user_id: int):
