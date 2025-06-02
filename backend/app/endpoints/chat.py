@@ -10,8 +10,6 @@ from fastapi import Depends, HTTPException
 from app.db.db import get_db
 from app.model.models import *
 
-from .chain import *
-
 load_dotenv()
 
 router = APIRouter(prefix="", tags=["chat"])
