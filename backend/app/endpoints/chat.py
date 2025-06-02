@@ -87,9 +87,6 @@ def api_send_group_message(group_name: str, payload: MessagePayload, username: s
 
 	msg = send_group_message(db, user_sender, group_name, payload)
 
-	manager = BlockchainManager(db)
-	manager.add_message(False, msg.id)
-
 	return msg
 
 @router.get("/messages/{user_origen}/{user_destino}", response_model=List[MessageResponse])
@@ -114,8 +111,6 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 		raise HTTPException(status_code=404, detail=f"User not found: {user_receiver}")
 
 	msg = send_p2p_message(db, user_sender, user_receiver, payload)
-	manager = BlockchainManager(db)
-	manager.add_message(True, msg.id)
 
 	return msg
 

@@ -86,26 +86,6 @@ class GroupMessage(Base):
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_group_messages")
 	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
 
-class Block(Base):
-	__tablename__ = "blocks"
-
-	id = Column(Integer, primary_key=True)
-	hash = Column(String, unique=True)
-	previous_hash = Column(String, nullable=True)
-	timestamp = Column(DateTime, default=datetime.utcnow)
-
-	messages = relationship("BlockMessage", back_populates="block")
-
-class BlockMessage(Base):
-	__tablename__ = "blockchain_messages"
-
-	id = Column(Integer, primary_key=True)
-	is_p2p = Column(Boolean)  # "0" or "1"
-	message_id = Column(Integer)  # Reference to either P2P_Message.id or GroupMessage.id
-
-	block_id = Column(Integer, ForeignKey("blocks.id"))
-	block = relationship("Block", back_populates="messages")
-
 class CreateGroupPayload(BaseModel):
 	name: str
 
