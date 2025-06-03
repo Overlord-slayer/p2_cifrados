@@ -4,11 +4,12 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 
 ## Integrantes
 
-| Nombre             | Carné  | Rol                                |
-| ------------------ | ------ | ---------------------------------- |
-| Samuel Argueta     | 211024 | Backend & Frontend (Autenticación) |
-| Astrid Glauser     | 21299  | Frontend (Chats, Requests)         |
-| Alejandro Martínez | 21430  | Backend (Chat, Crypt, Blockchain)  |
+| Nombre             | Carné  | Rol                                                   |
+| ------------------ | ------ | ----------------------------------------------------- |
+| Alejandro Martínez | 21430  | Backend & Frontend (Chats, Crypt, Blockchain, Verify) |
+| Samuel Argueta     | 211024 | Backend & Frontend (Toda la Autenticación)            |
+| Astrid Glauser     | 21299  | Backend & Frontend (Chats, Requests)                  |
+| Dolan Raúl         | 21965  | Backend (Blockchain test)                             |
 
 ## Funcionalidades principales
 
