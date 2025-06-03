@@ -26,15 +26,10 @@ class BlockchainManager:
 		# Simple hash based on message content
 		message_data = []
 		for message in messages:
-			db_message= ""
-			if message.is_p2p:
-				db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message.message_id).first().message
-			else:
-				db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message.message_id).first().message
-			message_data.append(f"{message.is_p2p}:{message.message_id}:{db_message}")
+			message_data.append(f"{message.is_p2p}:{message.message_id}:{message.message_hash}:{message.message_str}")
 
-		block_string = json.dumps(message_data) + previous_hash
-		block_hash = hashlib.sha256(block_string.encode()).hexdigest()
+		block_string = json.dumps(message_data)
+		block_hash = hashlib.sha256((block_string + previous_hash).encode()).hexdigest()
 
 		new_block = Block(
 			hash=block_hash,
@@ -47,7 +42,17 @@ class BlockchainManager:
 		return new_block
 
 	def add_message(self, is_p2p, message_id):
-		new_msg = BlockMessage(is_p2p=is_p2p, message_id=message_id)
+		if is_p2p:
+			db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message_id).first()
+		else:
+			db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message_id).first()
+			
+		new_msg = BlockMessage(
+			is_p2p=is_p2p,
+			message_id=message_id,
+			message_str=db_message.message,
+			message_hash=db_message.hash
+		)
 		self.db.add(new_msg)
 		self.db.commit()
 
@@ -79,14 +84,16 @@ class BlockchainManager:
 				"hash": block.hash,
 				"previous_hash": block.previous_hash,
 				"timestamp": block.timestamp.isoformat(),
-				"block_string": block.block_string,
-				"messages": []
+				"messages": [],
+				"block_string": block.block_string
 			}
 
 			for msg in block.messages:
 				block_info["messages"].append({
 					"is_p2p": msg.is_p2p,
-					"message_id": msg.message_id
+					"message_id": msg.message_id,
+					"message": msg.message_id,
+					"message_hash": msg.message_hash
 				})
 
 			result.append(block_info)
@@ -105,16 +112,11 @@ class BlockchainManager:
 			
 			message_data = []
 			for message in messages:
-				db_message= ""
-				if message.is_p2p:
-					db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message.message_id).first().message
-				else:
-					db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message.message_id).first().message
-				message_data.append(f"{message.is_p2p}:{message.message_id}:{db_message}")
+				message_data.append(f"{message.is_p2p}:{message.message_id}:{message.message_hash}:{message.message_str}")
 
 			previous_hash = blocks[i - 1].hash if i > 0 else "0"
-			block_string = json.dumps(message_data) + previous_hash
-			recalculated_hash = hashlib.sha256(block_string.encode()).hexdigest()
+			block_string = json.dumps(message_data)
+			recalculated_hash = hashlib.sha256((block_string + previous_hash).encode() ).hexdigest()
 
 			if block.hash != recalculated_hash:
 				return False, f"Block {block.id} hash mismatch! Stored: {block.hash}, Recalculated: {recalculated_hash}"

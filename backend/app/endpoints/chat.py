@@ -119,7 +119,7 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 
 	return msg
 
-@router.post("/messages/{user_origen}/{user_destino}/verify-hash")
+@router.get("/messages/{user_origen}/{user_destino}/verify-hash")
 def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depends(get_db)):
 	user_sender = get_user_id_by_email(db, user_origen)
 	user_receiver = get_user_id_by_email(db, user_destino)
@@ -129,27 +129,35 @@ def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depen
 		raise HTTPException(status_code=404, detail=f"User not found: {user_destino}")
 
 	items = get_p2p_messages_by_user(db, user_sender, user_receiver)
-	messages = [item["message"] for item in items]
-	hashes = [item["hash"] for item in items]
 
 	errors = 0
-	for message, hash in zip(messages, hashes):
-		if (not verify_hash(message, hash)):
+	for item in items:
+		if (not verify_hash(item["message"]+item["sender"]+item["receiver"]+item["timestamp"].isoformat(), item["hash"])):
 			errors += 1
 	if errors > 0:
 		return False, f"Hashing failed for {errors}/{len(items)} items."
 	return True, f"Hashes verified for {len(items)} items."
 
-@router.post("/group-messages/{group_name}/verify-hash")
+@router.get("/group-messages/{group_name}/verify-hash")
 def api_verify_group_hash(group_name: str, db: Session = Depends(get_db)):
 	items = get_group_messages(db, group_name)
-	messages = [item["message"] for item in items]
-	hashes = [item["hash"] for item in items]
-
 	errors = 0
-	for message, hash in zip(messages, hashes):
-		if (not verify_hash(message, hash)):
+	for item in items:
+		if (not verify_hash(item["message"]+item["sender"]+item["receiver"]+item["timestamp"].isoformat(), item["hash"])):
 			errors += 1
 	if errors > 0:
 		return False, f"Hashing failed for {errors}/{len(items)} items."
 	return True, f"Hashes verified for {len(items)} items."
+
+
+@router.get("/groups/all")
+def api_get_all_groups(db: Session = Depends(get_db)):
+	groups = db.query(Group).all()
+	names = [group.id for group in groups]
+	return names
+
+@router.get("/users/all")
+def api_get_all_users(db: Session = Depends(get_db)):
+	users = db.query(User).all()
+	emails = [user.email for user in users]
+	return emails

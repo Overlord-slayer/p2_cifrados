@@ -5,6 +5,7 @@ import Signup from "@pages/SignUp/Signup";
 import Login from "@pages/Login/Login";
 import ChatPage from "@pages/Chat/P2PChatPage";
 import GroupChatPage from "@pages/Chat/GroupChatPage";
+import RequestInterface from "@pages/Other/RequestInterface";
 import OAuthCallback from "@pages/OAuthCallback/OAuthCallback";
 import { ProtectedRoute, PublicOnlyRoute } from "./guards/RouteGuards";
 
@@ -40,6 +41,14 @@ export default function AppRoutes() {
 				element={
 					<ProtectedRoute>
 						<GroupChatPage />
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/verify"
+				element={
+					<ProtectedRoute>
+						<RequestInterface />
 					</ProtectedRoute>
 				}
 			/>
