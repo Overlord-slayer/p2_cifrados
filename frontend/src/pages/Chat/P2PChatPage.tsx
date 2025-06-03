@@ -9,7 +9,7 @@ import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
 import './P2PChat.css'
-import { getUsername, getPublicKey } from '@store/userStore'
+import { getUsername, getPublicKey, loadUsername } from '@store/userStore'
 
 export default function ChatPage() {
 	const me = useAuth(state => state.accessToken)!
@@ -22,6 +22,12 @@ export default function ChatPage() {
 	const setMessages = useChatStore(state => state.setMessages)
 
 	useEffect(() => {
+		if (getUsername().length === 0) {
+			loadUsername(me)
+		}
+	}, [])
+
+	useEffect(() => {
 		api.get('/users', {
 			headers: {
 				Authorization: `Bearer ${me}`
@@ -29,6 +35,7 @@ export default function ChatPage() {
 		})
 			.then(res => setContacts(res.data))
 			.catch(err => console.error('Error fetching users:', err))
+		console.log(getUsername())
 	}, [])
 
 	useEffect(() => {

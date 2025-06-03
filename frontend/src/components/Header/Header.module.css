@@ -1,6 +1,7 @@
 * {
 	margin: 0;
 	padding: 0;
+	overflow: hidden;
 }
 .body {
 	width: 100vw;
@@ -16,6 +17,7 @@
   border-bottom: 1px solid #020202;
   top: 0;
   height: 4.9vh;
+  padding-right: 40px;
 }
 
 :global(body.dark) .header {

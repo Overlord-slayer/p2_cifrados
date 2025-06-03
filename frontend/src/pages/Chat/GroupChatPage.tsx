@@ -47,7 +47,8 @@ export default function GroupChatPage() {
 			setShowModal(false)
 			setGroupName('')
 		} catch (err) {
-			console.error('Error creating group:', err)
+			alert('Error creating group: Group name already in use.')
+			console.error(err)
 		}
 	}
 
