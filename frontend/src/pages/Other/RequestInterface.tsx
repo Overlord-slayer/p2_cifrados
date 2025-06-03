@@ -49,7 +49,10 @@ export default function RequestInterface() {
 
 	const renderTransactionsVerify = () => (
 		<div className="flex flex-col space-y-6">
-			<h1>{transactions_verified}</h1>
+			{transactions_verified.length === 0 ? (
+				<p>No transactions found.</p>
+			) :
+			<h1>{transactions_verified}</h1>}
 		</div>
 	)
 

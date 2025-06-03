@@ -121,6 +121,8 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 
 @router.get("/messages/{user_origen}/{user_destino}/verify-hash")
 def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depends(get_db)):
+	if user_origen == user_destino:
+		return False, f"Skipping verification. User1({user_origen}) == User2({user_destino})."
 	user_sender = get_user_id_by_email(db, user_origen)
 	user_receiver = get_user_id_by_email(db, user_destino)
 	if not user_sender:
