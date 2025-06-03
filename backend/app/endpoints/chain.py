@@ -14,7 +14,7 @@ load_dotenv()
 
 class BlockchainManager:
 	def __init__(self, db_session):
-		self.db = db_session
+		self.db : Session = db_session
 
 	def get_last_block(self):
 		return self.db.query(Block).order_by(Block.id.desc()).first()
@@ -24,14 +24,23 @@ class BlockchainManager:
 		previous_hash = last_block.hash if last_block else "0"
 
 		# Simple hash based on message content
-		message_data = [f"{m.is_p2p}:{m.message_id}" for m in messages]
+		message_data = []
+		for message in messages:
+			db_message= ""
+			if message.is_p2p:
+				db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message.message_id).first().message
+			else:
+				db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message.message_id).first().message
+			message_data.append(f"{message.is_p2p}:{message.message_id}:{db_message}")
+
 		block_string = json.dumps(message_data) + previous_hash
 		block_hash = hashlib.sha256(block_string.encode()).hexdigest()
 
 		new_block = Block(
 			hash=block_hash,
 			previous_hash=previous_hash,
-			messages=messages
+			messages=messages,
+			block_string=block_string
 		)
 		self.db.add(new_block)
 		self.db.commit()
@@ -70,6 +79,7 @@ class BlockchainManager:
 				"hash": block.hash,
 				"previous_hash": block.previous_hash,
 				"timestamp": block.timestamp.isoformat(),
+				"block_string": block.block_string,
 				"messages": []
 			}
 
@@ -92,7 +102,16 @@ class BlockchainManager:
 		for i, block in enumerate(blocks):
 			# Recompute the hash from message contents and previous hash
 			messages: List[BlockMessage] = sorted(block.messages, key=lambda m: m.id)  # consistent order
-			message_data = [f"{m.is_p2p}:{m.message_id}" for m in messages]
+			
+			message_data = []
+			for message in messages:
+				db_message= ""
+				if message.is_p2p:
+					db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message.message_id).first().message
+				else:
+					db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message.message_id).first().message
+				message_data.append(f"{message.is_p2p}:{message.message_id}:{db_message}")
+
 			previous_hash = blocks[i - 1].hash if i > 0 else "0"
 			block_string = json.dumps(message_data) + previous_hash
 			recalculated_hash = hashlib.sha256(block_string.encode()).hexdigest()

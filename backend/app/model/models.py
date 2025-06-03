@@ -94,6 +94,7 @@ class Block(Base):
 	previous_hash = Column(String, nullable=True)
 	timestamp = Column(DateTime, default=datetime.utcnow)
 
+	block_string = Column(String)
 	messages = relationship("BlockMessage", back_populates="block")
 
 class BlockMessage(Base):
