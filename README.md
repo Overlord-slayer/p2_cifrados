@@ -9,7 +9,6 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 | Samuel Argueta     | 211024 | Backend & Frontend (Autenticación) |
 | Astrid Glauser     | 21299  | Frontend (Chats, Requests)         |
 | Alejandro Martínez | 21430  | Backend (Chat, Crypt, Blockchain)  |
-| Dolan Raúl         | 21965  | -                                  |
 
 ## Funcionalidades principales
 
