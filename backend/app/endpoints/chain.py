@@ -92,7 +92,7 @@ class BlockchainManager:
 				block_info["messages"].append({
 					"is_p2p": msg.is_p2p,
 					"message_id": msg.message_id,
-					"message": msg.message_id,
+					"message": msg.message_str,
 					"message_hash": msg.message_hash
 				})
 

@@ -58,7 +58,7 @@ export default function RequestInterface() {
 
 	const renderTransactions = () => (
 		<div className="flex flex-col space-y-6">
-			<h1 className="text-2xl font-bold" style={{ marginBottom: 25 }}>Transactions</h1>
+			<h1 className="text-2xl font-bold">Transactions</h1>
 			{transactions.length === 0 ? (
 				<p>No transactions found.</p>
 			) : (
@@ -66,9 +66,9 @@ export default function RequestInterface() {
 					<div key={tx.id} className="border rounded-2xl shadow-lg p-6 bg-white">
 						<div className="flex flex-col space-y-2">
 							<h2 className="text-xl font-semibold" style={{ marginBottom: 15, marginTop:50 }}>Block #{tx.id}</h2>
-							<p style={{ marginBottom: 5 }}><strong>Hash:</strong> {tx.hash}</p>
-							<p style={{ marginBottom: 5 }}><strong>Previous Hash:</strong> {tx.previous_hash}</p>
-							<p style={{ marginBottom: 5 }}><strong>Timestamp:</strong> {new Date(tx.timestamp).toLocaleString()}</p>
+							<p style={{ marginBottom: 5 }}><strong>Hash:</strong> <pre>    {tx.hash}</pre></p>
+							<p style={{ marginBottom: 5 }}><strong>Previous Hash:</strong> <pre>    {tx.previous_hash}</pre></p>
+							<p style={{ marginBottom: 5 }}><strong>Timestamp:</strong> <pre>    {new Date(tx.timestamp).toLocaleString()}</pre></p>
 						</div>
 
 						<div className="mt-4">
@@ -76,10 +76,10 @@ export default function RequestInterface() {
 							<div className="flex flex-col space-y-4 border-l-2 pl-4">
 								{tx.messages.map((msg: any, index: number) => (
 									<div key={index} className="bg-gray-50 p-3 rounded-md shadow-sm">
-										<p style={{ marginBottom: 5 }}><strong>P2P:</strong> {msg.is_p2p ? 'Yes' : 'No'}</p>
-										<p style={{ marginBottom: 5 }}><strong>Message ID:</strong> {msg.message_id}</p>
-										<p style={{ marginBottom: 5 }}><strong>Message:</strong> {msg.message}</p>
-										<p style={{ marginBottom: 5 }}><strong>Message Hash:</strong> {msg.message_hash}</p>
+										<p style={{ marginBottom: 5 }}><strong>&emsp;P2P:</strong> <pre>	{msg.is_p2p ? 'Yes' : 'No'}</pre></p>
+										<p style={{ marginBottom: 5 }}><strong>&emsp;Message ID:</strong> <pre>	{msg.message_id}</pre></p>
+										<p style={{ marginBottom: 5 }}><strong>&emsp;Message:</strong> <pre>	{msg.message}</pre></p>
+										<p style={{ marginBottom: 5 }}><strong>&emsp;Message Hash:</strong> <pre>	{msg.message_hash}</pre></p>
 									</div>
 								))}
 							</div>
@@ -109,7 +109,8 @@ export default function RequestInterface() {
 					backgroundColor: '#222',
 					color: 'white',
 					border: '1px solid #444',
-					cursor: 'pointer'
+					cursor: 'pointer',
+					marginTop: 20
 				}}
 			>
 				{!selected_group && (
@@ -126,12 +127,12 @@ export default function RequestInterface() {
 				style={{
 					width: '100%',
 					padding: '8px',
-					marginTop: '8px',
 					backgroundColor: '#25D366',
 					color: 'white',
 					borderRadius: '6px',
 					border: 'none',
-					cursor: 'pointer'
+					cursor: 'pointer',
+					marginTop: 20
 				}}
 			>
 				Verificar
@@ -159,7 +160,8 @@ export default function RequestInterface() {
 					backgroundColor: '#222',
 					color: 'white',
 					border: '1px solid #444',
-					cursor: 'pointer'
+					cursor: 'pointer',
+					marginTop: 20
 				}}
 			>
 				{!selected_user1 && (
@@ -180,7 +182,8 @@ export default function RequestInterface() {
 					backgroundColor: '#222',
 					color: 'white',
 					border: '1px solid #444',
-					cursor: 'pointer'
+					cursor: 'pointer',
+					marginTop: 20
 				}}
 			>
 				{!selected_user2 && (
@@ -197,12 +200,12 @@ export default function RequestInterface() {
 				style={{
 					width: '100%',
 					padding: '8px',
-					marginTop: '8px',
 					backgroundColor: '#25D366',
 					color: 'white',
 					borderRadius: '6px',
 					border: 'none',
-					cursor: 'pointer'
+					cursor: 'pointer',
+					marginTop: 20
 				}}
 			>
 				Verificar
