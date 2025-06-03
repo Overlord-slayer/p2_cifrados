@@ -7,7 +7,7 @@ import databases
 import sqlalchemy
 from contextlib import asynccontextmanager
  
-DATABASE_URL = "postgresql+asyncpg://postgre:admin@localhost:5432/ChatBlockchain"
+DATABASE_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/ChatBlockchain"
 
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
