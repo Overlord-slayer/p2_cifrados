@@ -9,7 +9,7 @@ import api from '../../lib/api'
 import { useAuth } from '../../store/useAuth'
 import { useChatStore } from '../../store/chatStore'
 import './P2PChat.css'
-import { getUsername, getPublicKey, loadUsername } from '@store/userStore'
+import { getUsername, getPublicKey, loadUsername, loadPublicKey } from '@store/userStore'
 
 export default function ChatPage() {
 	const me = useAuth(state => state.accessToken)!
@@ -24,6 +24,9 @@ export default function ChatPage() {
 	useEffect(() => {
 		if (getUsername().length === 0) {
 			loadUsername(me)
+		}
+		if (getPublicKey().length === 0) {
+			loadPublicKey(getUsername(), me)
 		}
 	}, [])
 
