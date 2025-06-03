@@ -4,12 +4,12 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 
 ## Integrantes
 
-| Nombre             | Carné  | Rol                      |
-| ------------------ | ------ | ------------------------ |
-| Samuel Argueta     | 211024 | Frontend + Autenticación |
-| Alejandro Martínez | 21430  | Backend + Chat & Crypt   |
-| Astrid Glauser     | 21299  | Backend + Frontend Chat  |
-| Dolan Raúl         | 21965  | Backend + Blockchain     |
+| Nombre             | Carné  | Rol                                |
+| ------------------ | ------ | ---------------------------------- |
+| Samuel Argueta     | 211024 | Backend & Frontend (Autenticación) |
+| Astrid Glauser     | 21299  | Frontend (Chats, Requests)         |
+| Alejandro Martínez | 21430  | Backend (Chat, Crypt, Blockchain)  |
+| Dolan Raúl         | 21965  | -                                  |
 
 ## Funcionalidades principales
 
@@ -121,6 +121,7 @@ POSTGRES_PASSWORD=
 POSTGRES_DB=
 DATABASE_URL=
 
+APP_SECRET=
 SECRET_KEY=
 SESSION_SECRET_KEY=
 
