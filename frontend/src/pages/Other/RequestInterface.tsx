@@ -109,7 +109,11 @@ export default function RequestInterface() {
 					cursor: 'pointer'
 				}}
 			>
-				<option value="">Selecciona grupo</option>
+				{!selected_group && (
+					<option value="" disabled>
+					Selecciona grupo
+					</option>
+				)}
 				{groups.map(u => (
 					<option key={u} value={u}>{u}</option>
 				))}
@@ -155,7 +159,11 @@ export default function RequestInterface() {
 					cursor: 'pointer'
 				}}
 			>
-				<option value="">Selecciona usuario</option>
+				{!selected_user1 && (
+					<option value="" disabled>
+					Selecciona usuario 1
+					</option>
+				)}
 				{users.map(u => (
 					<option key={u} value={u}>{u}</option>
 				))}
@@ -172,7 +180,11 @@ export default function RequestInterface() {
 					cursor: 'pointer'
 				}}
 			>
-				<option value="">Selecciona usuario</option>
+				{!selected_user2 && (
+					<option value="" disabled>
+					Selecciona usuario 2
+					</option>
+				)}
 				{users.map(u => (
 					<option key={u} value={u}>{u}</option>
 				))}
