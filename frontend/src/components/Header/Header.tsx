@@ -33,6 +33,9 @@ export function Header() {
             <Link to="/group-chat" className={styles.link}>
               Group Chat
             </Link>
+            <Link to="/verify" className={styles.link}>
+              Verify
+            </Link>
             <button onClick={handleLogout} className={styles.logoutButton}>
               Logout
             </button>

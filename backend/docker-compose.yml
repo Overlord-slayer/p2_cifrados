@@ -1,12 +1,10 @@
-version: "3.9"
-
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "5450:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root

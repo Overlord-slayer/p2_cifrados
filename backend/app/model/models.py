@@ -86,6 +86,29 @@ class GroupMessage(Base):
 	sender = relationship("User", foreign_keys=[sender_id], backref="sent_group_messages")
 	group = relationship("Group", foreign_keys=[group_name], backref="group_data")
 
+class Block(Base):
+	__tablename__ = "blocks"
+
+	id = Column(Integer, primary_key=True)
+	hash = Column(String, unique=True)
+	previous_hash = Column(String, nullable=True)
+	timestamp = Column(DateTime, default=datetime.utcnow)
+	block_string = Column(String)
+
+	messages = relationship("BlockMessage", back_populates="block")
+
+class BlockMessage(Base):
+	__tablename__ = "blockchain_messages"
+
+	id = Column(Integer, primary_key=True)
+	is_p2p = Column(Boolean)
+	message_id = Column(Integer)
+	message_str = Column(String)
+	message_hash = Column(String)
+
+	block_id = Column(Integer, ForeignKey("blocks.id"))
+	block = relationship("Block", back_populates="messages")
+
 class CreateGroupPayload(BaseModel):
 	name: str
 
@@ -126,12 +149,15 @@ def send_p2p_message(db: Session, sender_id: int, receiver_id: int, payload: Mes
 		private_ecc_key = decrypt_bytes(private_ecc_key_encrypted)
 		signature = sign_data_ecdsa(encrypted_message, private_ecc_key)
 
+	timestamp = datetime.utcnow()
+
 	msg = P2P_Message(
 		sender_id=sender_id,
 		receiver_id=receiver_id,
 		message=encrypted_message,
 		signature=signature,
-		hash=generate_hash(payload.message)
+		hash=generate_hash(payload.message+sender.email+receiver.email+timestamp.isoformat()),
+		timestamp=timestamp
 	)
 	db.add(msg)
 	db.commit()
@@ -191,19 +217,23 @@ def send_group_message(db: Session, sender_id: int, group_name: str, payload: Me
 	aes_key = str_to_bytes(aes_key_string)
 	encrypted_message = cifrar_mensaje_grupal(payload.message, aes_key)
 
+	sender = get_user_by_id(db, sender_id)
+
 	signature = None
 	if (payload.signed):
-		sender = get_user_by_id(db, sender_id)
 		private_ecc_key_encrypted = str_to_bytes(sender.private_ecc_key)
 		private_ecc_key = decrypt_bytes(private_ecc_key_encrypted)
 		signature = sign_data_ecdsa(encrypted_message, private_ecc_key)
+
+	timestamp = datetime.utcnow()
 
 	group_message = GroupMessage(
 		sender_id=sender_id,
 		group_name=group_name,
 		message=encrypted_message,
 		signature=signature,
-		hash=generate_hash(payload.message)
+		hash=generate_hash(payload.message+sender.email+group_name+timestamp.isoformat()),
+		timestamp=timestamp
 	)
 	db.add(group_message)
 	db.commit()

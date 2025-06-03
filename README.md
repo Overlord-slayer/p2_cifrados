@@ -4,12 +4,12 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 
 ## Integrantes
 
-| Nombre             | Carné  | Rol                      |
-| ------------------ | ------ | ------------------------ |
-| Samuel Argueta     | 211024 | Frontend + Autenticación |
-| Alejandro Martínez | 21430  | Backend + Chat & Crypt   |
-| Astrid Glauser     | 21299  | Backend + Frontend Chat  |
-| Dolan Raúl         | 21965  | Backend + Blockchain     |
+| Nombre             | Carné  | Rol                                                   |
+| ------------------ | ------ | ----------------------------------------------------- |
+| Alejandro Martínez | 21430  | Backend & Frontend (Chats, Crypt, Blockchain, Verify) |
+| Samuel Argueta     | 211024 | Backend & Frontend (Toda la Autenticación)            |
+| Astrid Glauser     | 21299  | Backend & Frontend (Chats, Requests, Verify)          |
+| Dolan Raúl         | 21965  | Blockchain test                                       |
 
 ## Funcionalidades principales
 
@@ -20,7 +20,7 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 
 * Chats protegidos:
   * Chat Grupal con cifrado AES-256-GCM
-  * Chat P2P con cifrado de extremo a extremo (X3DH + Double Ratchet)
+  * Chat P2P con cifrado AES + RSA
 
 * Firma Digital con ECDSA
 * Verificación de integridad con SHA-256/SHA-3
@@ -121,6 +121,7 @@ POSTGRES_PASSWORD=
 POSTGRES_DB=
 DATABASE_URL=
 
+APP_SECRET=
 SECRET_KEY=
 SESSION_SECRET_KEY=
 
