@@ -20,7 +20,7 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 
 * Chats protegidos:
   * Chat Grupal con cifrado AES-256-GCM
-  * Chat P2P con cifrado de extremo a extremo (X3DH + Double Ratchet)
+  * Chat P2P con cifrado AES + RSA
 
 * Firma Digital con ECDSA
 * Verificación de integridad con SHA-256/SHA-3
