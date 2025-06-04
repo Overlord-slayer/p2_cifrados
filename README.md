@@ -9,7 +9,7 @@ Este proyecto es parte del curso de **Cifrado de Informacion** y tiene como obje
 | Alejandro Martínez | 21430  | Backend & Frontend (Chats, Crypt, Blockchain, Verify) |
 | Samuel Argueta     | 211024 | Backend & Frontend (Toda la Autenticación)            |
 | Astrid Glauser     | 21299  | Backend & Frontend (Chats, Requests, Verify)          |
-| Dolan Raúl         | 21965  | Blockchain test                                       |
+| Dolan Raúl         | 21965  | -                                                     |
 
 ## Funcionalidades principales
 
