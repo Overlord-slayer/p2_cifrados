@@ -16,7 +16,7 @@ export default function Sidebar({ contacts, username, active, onSelect }: Props)
 		<aside className="sidebar">
 			<h2 className="sidebar-title">
 				<HiUsers className="sidebar-icon" />
-				Contacts
+				Usuarios
 			</h2>
 			<div className="contact-list">
 				{items.map(c => {
