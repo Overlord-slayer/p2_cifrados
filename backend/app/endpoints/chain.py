@@ -112,7 +112,7 @@ class BlockchainManager:
 			
 			message_data = []
 			for message in messages:
-				message_data.append(f"{message.is_p2p}:{message.message_id}:{message.message_hash}:{json.loads(message.message_str)['mensaje']}")
+				message_data.append(f"{message.is_p2p}:{message.message_id}:{message.message_hash}:{message.message_str}")
 
 			previous_hash = blocks[i - 1].hash if i > 0 else "0"
 			block_string = json.dumps(message_data)

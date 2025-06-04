@@ -86,7 +86,7 @@ export default function ChatPage() {
 
 				{active && (
 					<>
-						<div className="chat-messages">
+						<main className="chat-messages"   style={{ display: 'flex', flexDirection: 'column-reverse', gap: '8px', overflowY: 'auto' }}>
 							{messages.slice().map(msg => (
 								<MessageBubble
 									key={`${msg.timestamp}-${msg.sender}`}
@@ -94,7 +94,7 @@ export default function ChatPage() {
 									me={msg.sender == getUsername()}
 								/>
 							))}
-						</div>
+						</main>
 
 						<div className="chat-footer">
 							<SignToggle enabled={sign} onToggle={setSign} />
