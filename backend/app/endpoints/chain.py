@@ -46,11 +46,11 @@ class BlockchainManager:
 			db_message = self.db.query(P2P_Message).filter(P2P_Message.id == message_id).first()
 		else:
 			db_message = self.db.query(GroupMessage).filter(GroupMessage.id == message_id).first()
-			
+
 		new_msg = BlockMessage(
 			is_p2p=is_p2p,
 			message_id=message_id,
-			message_str=db_message.message,
+			message_str=json.loads(db_message.message)["mensaje"],
 			message_hash=db_message.hash
 		)
 		self.db.add(new_msg)
