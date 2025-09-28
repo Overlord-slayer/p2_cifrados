@@ -36,4 +36,23 @@ export default defineConfig({
       },
     ],
   },
+  // Security and production configuration
+  build: {
+    minify: true,
+    sourcemap: false, // Disable source maps in production for security
+  },
+  server: {
+    // Development server configuration
+    hmr: {
+      overlay: process.env.NODE_ENV === 'development', // Only show overlay in development
+    },
+  },
+  define: {
+    // Remove development tools and debugging info in production
+    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+  },
+  // Remove console logs in production build
+  esbuild: process.env.NODE_ENV === 'production' ? {
+    drop: ['console', 'debugger'],
+  } : {},
 });

@@ -1,6 +1,7 @@
 .bubble-wrapper {
   margin-bottom: 8px;
   display: flex;
+  color:white
 }
 
 .bubble-wrapper.left {
