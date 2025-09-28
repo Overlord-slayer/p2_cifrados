@@ -67,7 +67,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 			"qr_code_base64": qr_base64,
 		}
 	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+		raise HTTPException(status_code=500, detail=f"Internal server error")
 
 @router.post("/login", response_model=Token)
 def signin(login_data: UserLogin, db: Session = Depends(get_db)):
