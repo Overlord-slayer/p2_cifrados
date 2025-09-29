@@ -7,6 +7,7 @@ import ChatPage from "@pages/Chat/P2PChatPage";
 import GroupChatPage from "@pages/Chat/GroupChatPage";
 import RequestInterface from "@pages/Other/RequestInterface";
 import OAuthCallback from "@pages/OAuthCallback/OAuthCallback";
+import SetupTOTP from "@components/SetupTOTP/SetupTOTP";
 import { ProtectedRoute, PublicOnlyRoute } from "./guards/RouteGuards";
 
 export default function AppRoutes() {
@@ -49,6 +50,14 @@ export default function AppRoutes() {
 				element={
 					<ProtectedRoute>
 						<RequestInterface />
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/setup-totp"
+				element={
+					<ProtectedRoute>
+						<SetupTOTP />
 					</ProtectedRoute>
 				}
 			/>
