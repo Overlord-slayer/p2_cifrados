@@ -5,56 +5,6 @@ import { resolve } from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  
-  // Security headers and build configuration
-  build: {
-    sourcemap: false, // Disable sourcemaps in production for security
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true, // Remove debugger statements
-      },
-    },
-  },
-
-  // Development server configuration
-  server: {
-    open: false, // Don't auto-open browser for security
-    strictPort: true,
-    host: 'localhost', // Bind only to localhost for security
-    cors: {
-      origin: ['http://localhost:3000', 'http://localhost:5173'],
-      credentials: true,
-    },
-    // Proxy API calls to backend to avoid CORS issues
-    proxy: {
-      '/auth': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-      }
-    },
-  },
-
-  // Preview server configuration (for production builds)
-  preview: {
-    port: 4173,
-    host: 'localhost',
-    strictPort: true,
-    open: false,
-  },
-
-  // Security: Remove development overlay in production
-  define: {
-    'process.env.NODE_ENV': '"production"',
-  },
-
   /**
    * Areas para agreagar nuevos aliases segun se necesiten
    */
@@ -62,27 +12,27 @@ export default defineConfig({
     alias: [
       {
         find: "@pages",
-        replacement: resolve("./src/pages"),
+        replacement: resolve(__dirname, "./src/pages"),
       },
       {
         find: "@components",
-        replacement: resolve("./src/components"),
+        replacement: resolve(__dirname, "./src/components"),
       },
       {
         find: "@api",
-        replacement: resolve("./src/lib"),
+        replacement: resolve(__dirname, "./src/lib"),
       },
       {
         find: "@store",
-        replacement: resolve("./src/store"),
+        replacement: resolve(__dirname, "./src/store"),
       },
       {
         find: "@constants",
-        replacement: resolve("./src/constants"),
+        replacement: resolve(__dirname, "./src/constants"),
       },
       {
         find: "@routes",
-        replacement: resolve("./src/routes"),
+        replacement: resolve(__dirname, "./src/routes"),
       },
     ],
   },

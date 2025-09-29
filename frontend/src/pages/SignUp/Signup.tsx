@@ -12,8 +12,9 @@ export default function Signup(): JSX.Element {
   const [password, setPassword] = useState<string>("");
 
   // Estados para datos devueltos tras el registro
+  const [qrCode, setQrCode] = useState<string>("");
+  const [totpSecret, setTotpSecret] = useState<string>("");
   const [registered, setRegistered] = useState<boolean>(false);
-  const [registrationMessage, setRegistrationMessage] = useState<string>("");
 
   // Estados para mensajes emergentes
   const [toastMessage, setToastMessage] = useState("");
@@ -50,29 +51,7 @@ export default function Signup(): JSX.Element {
       return;
     }
     if (password.length < 8) {
-      setToastMessage("La contraseña debe tener al menos 8 caracteres y contener: mayúscula, minúscula, número y carácter especial.");
-      setToastType("error");
-      return;
-    }
-
-    // Validaciones de contraseña más estrictas según el backend
-    if (!/[A-Z]/.test(password)) {
-      setToastMessage("La contraseña debe contener al menos una letra mayúscula.");
-      setToastType("error");
-      return;
-    }
-    if (!/[a-z]/.test(password)) {
-      setToastMessage("La contraseña debe contener al menos una letra minúscula.");
-      setToastType("error");
-      return;
-    }
-    if (!/\d/.test(password)) {
-      setToastMessage("La contraseña debe contener al menos un número.");
-      setToastType("error");
-      return;
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      setToastMessage("La contraseña debe contener al menos un carácter especial.");
+      setToastMessage("La contraseña debe tener al menos 8 caracteres.");
       setToastType("error");
       return;
     }
@@ -81,28 +60,31 @@ export default function Signup(): JSX.Element {
     try {
       const res = await signup(email, password);
       console.log("Signup OK:", res.data);
-      
-      // El backend ahora devuelve: { email, message, setup_required }
-      setRegistrationMessage(res.data.message || "Cuenta creada exitosamente");
+      setQrCode(res.data.qr_code_base64);
+      setTotpSecret(res.data.totp_secret);
       setRegistered(true);
-      setToastMessage("Registro exitoso. Ahora debes iniciar sesión para configurar la autenticación de dos factores.");
+      setToastMessage("Registro exitoso.");
       setToastType("success");
     } catch (e: unknown) {
+      // Usar `unknown` en lugar de `AxiosError`
       console.error("Error durante el registro:", e);
 
+      // Asegurarse de que `e` es un AxiosError
       if (e instanceof AxiosError) {
-        // El backend ahora devuelve mensajes más genéricos por seguridad
-        const errorMessage = e?.response?.data?.detail || "Error durante el registro";
-        
-        if (errorMessage === "Invalid request data") {
-          setToastMessage("Los datos proporcionados no son válidos. Verifica tu contraseña.");
+        // Verificar si es una instancia de AxiosError
+        // Verificar si el error es por un correo ya registrado
+        if (e?.response?.data?.detail === "Email already registered") {
+          setToastMessage(
+            "Este correo electrónico ya está registrado. ¿Quieres iniciar sesión?"
+          );
           setToastType("error");
         } else {
-          setToastMessage(errorMessage);
+          setToastMessage("Error durante el registro. Inténtalo de nuevo.");
           setToastType("error");
         }
       } else {
-        setToastMessage("Error de conexión. Inténtalo de nuevo.");
+        // Si el error no es un AxiosError, manejamos el error genérico
+        setToastMessage("Error desconocido. Inténtalo de nuevo.");
         setToastType("error");
       }
     }
@@ -110,7 +92,7 @@ export default function Signup(): JSX.Element {
 
   // Redirigir al usuario al flujo de Google OAuth
   const handleGoogleSignup = () => {
-    window.location.href = "/auth/google/login";
+    window.location.href = "http://localhost:8000/auth/google/login";
   };
 
   return (
@@ -145,19 +127,19 @@ export default function Signup(): JSX.Element {
             </button>
           </div>
         ) : (
-          // Vista después de registrarse: explicación del nuevo flujo
+          // Vista después de registrarse: muestra QR y secreto TOTP
           <div className={styles.result}>
-            <p className={styles.success}>¡Registro exitoso!</p>
-            <p>{registrationMessage}</p>
-            <div className={styles.instructions}>
-              <p><strong>Pasos siguientes:</strong></p>
-              <ol>
-                <li>Haz clic en "Ir al login" para iniciar sesión</li>
-                <li>Después del login, accederás automáticamente a la configuración de autenticación de dos factores (2FA)</li>
-                <li>Escanea el código QR con tu aplicación de autenticación (Google Authenticator, Authy, etc.)</li>
-                <li>¡Listo! Tu cuenta estará completamente configurada</li>
-              </ol>
-            </div>
+            <p className={styles.success}>Registro exitoso</p>
+            <p>Escanea este código QR en tu app de autenticación:</p>
+            <img
+              src={`data:image/png;base64,${qrCode}`}
+              alt="TOTP QR Code"
+              className={styles.qr}
+            />
+            <p>
+              O copia este código:
+              <code className={styles.code}>{totpSecret}</code>
+            </p>
             <button
               onClick={() => navigate("/login")}
               className={styles.buttonAlt}
