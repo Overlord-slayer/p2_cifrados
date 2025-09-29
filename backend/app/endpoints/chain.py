@@ -104,7 +104,7 @@ class BlockchainManager:
 		blocks: List[Block] = self.db.query(Block).order_by(Block.id.asc()).all()
 
 		if not blocks:
-			return True, "No blocks found. Blockchain is empty."
+			return True, "No blocks available"
 
 		for i, block in enumerate(blocks):
 			# Recompute the hash from message contents and previous hash
@@ -119,21 +119,27 @@ class BlockchainManager:
 			recalculated_hash = hashlib.sha256((block_string + previous_hash).encode() ).hexdigest()
 
 			if block.hash != recalculated_hash:
-				return False, f"Block {block.id} hash mismatch! Stored: {block.hash}, Recalculated: {recalculated_hash}"
+				return False, "Verification failed"
 
 			if i > 0 and block.previous_hash != blocks[i - 1].hash:
-				return False, f"Block {block.id} previous_hash mismatch with Block {blocks[i - 1].id}"
+				return False, "Verification failed"
 
-		return True, f"Blockchain is valid. Calculated {len(blocks)} blocks."
+		return True, "Verification successful"
 
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/transactions")
 def get_transactions(db: Session = Depends(get_db)):
-	manager = BlockchainManager(db)
-	return manager.get_all_blocks()
+	try:
+		manager = BlockchainManager(db)
+		return manager.get_all_blocks()
+	except Exception as e:
+		raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/verify-transactions")
 def get_transactions(db: Session = Depends(get_db)):
-	manager = BlockchainManager(db)
-	return manager.verify_blockchain()
+	try:
+		manager = BlockchainManager(db)
+		return manager.verify_blockchain()
+	except Exception as e:
+		raise HTTPException(status_code=500, detail="Internal server error")
