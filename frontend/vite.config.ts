@@ -27,6 +27,19 @@ export default defineConfig({
       origin: ['http://localhost:3000', 'http://localhost:5173'],
       credentials: true,
     },
+    // Proxy API calls to backend to avoid CORS issues
+    proxy: {
+      '/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      }
+    },
   },
 
   // Preview server configuration (for production builds)

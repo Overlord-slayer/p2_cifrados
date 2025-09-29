@@ -40,7 +40,7 @@ export default function SetupTOTP(): JSX.Element {
     try {
       setLoading(true);
       const response = await axios.get<TOTPSetupResponse>(
-        "http://localhost:8000/auth/totp-setup",
+        "/auth/totp-setup",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,

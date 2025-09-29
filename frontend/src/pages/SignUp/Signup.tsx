@@ -110,7 +110,7 @@ export default function Signup(): JSX.Element {
 
   // Redirigir al usuario al flujo de Google OAuth
   const handleGoogleSignup = () => {
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = "/auth/google/login";
   };
 
   return (
