@@ -13,8 +13,11 @@ import pyotp
 import qrcode
 import io
 import base64
+import logging
 
 from app.crypto.crypto import *
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -66,7 +69,12 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 			"totp_secret": setup_id,  # Return only non-sensitive identifier
 			"qr_code_base64": setup_id,  # Return only non-sensitive identifier
 		}
+	except HTTPException:
+		# Re-raise HTTPExceptions as-is
+		raise
 	except Exception as e:
+		logger.exception("Signup failure")
+		# 500 sólo si realmente es un error interno
 		raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/login", response_model=Token)
@@ -92,6 +100,8 @@ def signin(login_data: UserLogin, db: Session = Depends(get_db)):
 		# Re-raise HTTPExceptions as-is
 		raise
 	except Exception as e:
+		logger.exception("Login failure")
+		# 500 sólo si realmente es un error interno
 		raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/refresh", response_model=Token)

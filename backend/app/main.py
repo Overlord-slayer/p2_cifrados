@@ -19,17 +19,41 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 	async def dispatch(self, request: Request, call_next):
 		response = await call_next(request)
 		
-		# Hide server information
-		response.headers["Server"] = ""
-		response.headers.pop("Server", None)
+		# NO toques headers de CORS si ya existen
+		cors_headers = {
+			"access-control-allow-origin",
+			"access-control-allow-credentials", 
+			"access-control-allow-headers",
+			"access-control-allow-methods",
+			"vary",
+		}
 		
-		# Security headers
-		response.headers["X-Content-Type-Options"] = "nosniff"
-		response.headers["X-Frame-Options"] = "DENY"
-		response.headers["X-XSS-Protection"] = "1; mode=block"
-		response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-		response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-		response.headers["Content-Security-Policy"] = "default-src 'self'"
+		# Añade tus headers de seguridad sin sobrescribir CORS:
+		def setdefault(h, v):
+			if h.lower() not in cors_headers and h not in response.headers:
+				response.headers[h] = v
+		
+		setdefault("X-Content-Type-Options", "nosniff")
+		setdefault("X-Frame-Options", "DENY") 
+		setdefault("X-XSS-Protection", "1; mode=block")
+		setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+		
+		# CSP: más permisivo para docs de Swagger
+		ct = response.headers.get("content-type", "")
+		if "text/html" in ct:
+			# Allow CDN resources for Swagger UI
+			setdefault("Content-Security-Policy", 
+				"default-src 'self'; "
+				"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+				"script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+				"img-src 'self' data: https://fastapi.tiangolo.com")
+		
+		# Ocultar banner del servidor correctamente
+		try:
+			del response.headers["server"]
+		except KeyError:
+			pass
 		
 		return response
 
@@ -49,17 +73,20 @@ app.include_router(chain_router)
 app.include_router(google_login_router)
 app.include_router(google_callback_router)
 
-# Add security headers middleware first
+# 1) Seguridad primero
 app.add_middleware(SecurityHeadersMiddleware)
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY"))
+# 2) Sessions / lo que haga falta
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY"), same_site="lax")
 
+# 3) Request logger
+app.add_middleware(RequestLoggerMiddleware)
+
+# 4) CORS AL FINAL (para que sea el outermost y no lo pisen luego)
 app.add_middleware(
 	CORSMiddleware,
-	allow_origins=["http://localhost:3000"],  # O "*" si estás probando
+	allow_origins=["http://localhost:3000"],
 	allow_credentials=True,
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
-
-app.add_middleware(RequestLoggerMiddleware)
