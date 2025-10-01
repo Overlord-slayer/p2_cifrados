@@ -5,6 +5,12 @@ import { resolve } from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Configuración de servidor: ocultar overlay en producción
+  server: {
+    hmr: {
+      overlay: process.env.NODE_ENV !== 'production'
+    }
+  },
   /**
    * Areas para agreagar nuevos aliases segun se necesiten
    */

@@ -120,7 +120,7 @@ def api_send_message(user_destino: str, payload: MessagePayload, username: str =
 	return msg
 
 @router.get("/messages/{user_origen}/{user_destino}/verify-hash")
-def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depends(get_db)):
+def api_verify_p2p_hash(user_origen: str, user_destino: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	if user_origen == user_destino:
 		return False, f"Skipping verification. User1({user_origen}) == User2({user_destino})."
 	user_sender = get_user_id_by_email(db, user_origen)
@@ -141,7 +141,7 @@ def api_verify_p2p_hash(user_origen: str, user_destino: str, db: Session = Depen
 	return True, f"Hashes verified for {len(items)} items."
 
 @router.get("/group-messages/{group_name}/verify-hash")
-def api_verify_group_hash(group_name: str, db: Session = Depends(get_db)):
+def api_verify_group_hash(group_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	items = get_group_messages(db, group_name)
 	errors = 0
 	for item in items:
@@ -153,13 +153,13 @@ def api_verify_group_hash(group_name: str, db: Session = Depends(get_db)):
 
 
 @router.get("/groups/all")
-def api_get_all_groups(db: Session = Depends(get_db)):
+def api_get_all_groups(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	groups = db.query(Group).all()
 	names = [group.id for group in groups]
 	return names
 
 @router.get("/users/all")
-def api_get_all_users(db: Session = Depends(get_db)):
+def api_get_all_users(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
 	users = db.query(User).all()
 	emails = [user.email for user in users]
 	return emails

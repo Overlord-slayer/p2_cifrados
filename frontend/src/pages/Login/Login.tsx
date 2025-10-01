@@ -7,6 +7,7 @@ import Toast from "@components/Toast/Toast";
 import styles from "./Login.module.css";
 import { googleLoginUrl } from "@api/api";
 import { loadUsername } from "@store/userStore";
+import { devLog, devError } from "@api/logger";
 
 /**
  * Componente `Login`.
@@ -61,7 +62,8 @@ export default function Login(): JSX.Element {
 	 * - Muestra mensajes de error o éxito mediante `Toast`.
 	 */
 	const handleLogin = async () => {
-		console.log("Intentando login con:", { email, password, totp });
+		// Log seguro: password y totp serán redactados automáticamente
+		devLog("Iniciando login para:", { email });
 
 		// Validaciones básicas de campos
 		if (!email || !password || !totp) {
@@ -90,20 +92,27 @@ export default function Login(): JSX.Element {
 			const res = await signin(email, password, totp);
 			const { access_token, refresh_token } = res.data;
 
-			console.log("Tokens recibidos:", res.data);
+			devLog("Login exitoso para:", { email });
+			
+			// Guardar tokens primero
+			localStorage.setItem("access_token", access_token);
+			localStorage.setItem("refresh_token", refresh_token);
 			setTokens(access_token, refresh_token);
+
+			// Cargar username antes de navegar
+			await loadUsername(access_token);
 
 			setToastMessage("Inicio de sesión exitoso.");
 			setToastType("success");
 
-			loadUsername(accessToken)
-
+			// Navegar después de un breve delay
 			setTimeout(() => {
 				setToastMessage("");
 				navigate("/chat");
-			}, 1500);
+			}, 500);
 		} catch (e) {
-			setToastMessage(`Error al iniciar sesión. Revisa tus datos. ${e}`);
+			devError("Error en login:", e);
+			setToastMessage(`Error al iniciar sesión. Revisa tus datos.`);
 			setToastType("error");
 		}
 	};
