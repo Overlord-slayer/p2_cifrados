@@ -34,7 +34,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 		response.headers["X-Frame-Options"] = "DENY"
 		response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 		response.headers["X-XSS-Protection"] = "1; mode=block"
-		response.headers["Content-Security-Policy"] = "default-src 'self'"
+		# CSP más permisivo para aplicaciones React/SPA
+		response.headers["Content-Security-Policy"] = (
+			"default-src 'self'; "
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+			"style-src 'self' 'unsafe-inline'; "
+			"img-src 'self' data: https:; "
+			"font-src 'self' data:; "
+			"connect-src 'self' http://localhost:8000 https://accounts.google.com https://oauth2.googleapis.com; "
+			"frame-src 'none'; "
+			"object-src 'none'; "
+			"base-uri 'self'"
+		)
 		
 		# HSTS solo en producción (asumiendo HTTPS)
 		environment = os.getenv("ENVIRONMENT", "development")
