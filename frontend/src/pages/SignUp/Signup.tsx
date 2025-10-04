@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./Signup.module.css";
 import Toast from "@components/Toast/Toast";
 import { AxiosError } from "axios";
+import { devLog, devError } from "@api/logger";
 
 export default function Signup(): JSX.Element {
   // Estados para los campos de entrada
@@ -37,7 +38,8 @@ export default function Signup(): JSX.Element {
    */
 
   const handleSignup = async () => {
-    console.log("Datos que se envían al backend:", { email, password });
+    // Log seguro: password será redactada automáticamente
+    devLog("Iniciando signup para:", { email });
 
     // Validaciones básicas
     if (!email || !password) {
@@ -59,7 +61,7 @@ export default function Signup(): JSX.Element {
     // Llamada a la API
     try {
       const res = await signup(email, password);
-      console.log("Signup OK:", res.data);
+      devLog("Signup exitoso:", { email, created: res.data.created });
       setQrCode(res.data.qr_code_base64);
       setTotpSecret(res.data.totp_secret);
       setRegistered(true);
@@ -67,7 +69,7 @@ export default function Signup(): JSX.Element {
       setToastType("success");
     } catch (e: unknown) {
       // Usar `unknown` en lugar de `AxiosError`
-      console.error("Error durante el registro:", e);
+      devError("Error durante el registro:", e);
 
       // Asegurarse de que `e` es un AxiosError
       if (e instanceof AxiosError) {
