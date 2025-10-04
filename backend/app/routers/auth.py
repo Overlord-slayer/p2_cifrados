@@ -1,5 +1,5 @@
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi import Header
 from sqlalchemy.orm import Session
 from app.schemas.schemas import UserCreate, UserOut, Token, UserLogin, SignupResponse
@@ -15,11 +15,13 @@ import io
 import base64
 
 from app.crypto.crypto import *
+from app.utils.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=SignupResponse)
-def signup(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("1/30seconds")
+def signup(request: Request, user: UserCreate, db: Session = Depends(get_db)):
 	if not user.email or not user.password:
 		raise HTTPException(status_code=400, detail="Email and password are required")
 
@@ -70,7 +72,8 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 		raise HTTPException(status_code=500, detail=f"Internal server error")
 
 @router.post("/login", response_model=Token)
-def signin(login_data: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("1/5seconds")
+def signin(request: Request, login_data: UserLogin, db: Session = Depends(get_db)):
 	user = db.query(User).filter_by(email=login_data.email).first()
 	if not user or not verify_password(login_data.password, user.hashed_password):
 		raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -89,8 +92,9 @@ def signin(login_data: UserLogin, db: Session = Depends(get_db)):
 	}
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit("1/second")
 def refresh_token_endpoint(
-	refresh_token: str = Header(...), db: Session = Depends(get_db)
+	request: Request, refresh_token: str = Header(...), db: Session = Depends(get_db)
 ):
 	"""
 	Recibe un refresh token válido en el header y devuelve nuevos tokens de acceso y refresh.
@@ -120,8 +124,9 @@ def refresh_token_endpoint(
 	}
 
 @router.get("/me")
+@limiter.limit("1/second")
 def get_me(
-	current_user: str = Depends(get_current_user), db: Session = Depends(get_db)
+	request: Request, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)
 ):
 	user = db.query(User).filter_by(email=current_user).first()
 	if not user:
