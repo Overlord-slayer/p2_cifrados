@@ -4,11 +4,14 @@ class UserCreate(BaseModel):
 	email: EmailStr
 	password: str
 
-# schemas.py
+# schemas.py - Antienumeración: respuesta uniforme para signup
 class SignupResponse(BaseModel):
-	email: EmailStr
-	totp_secret: str
-	qr_code_base64: str
+	detail: str
+	created: bool
+	# Datos sensibles solo si created=True (se manejan aparte internamente)
+	email: EmailStr | None = None
+	totp_secret: str | None = None
+	qr_code_base64: str | None = None
 
 class UserOut(BaseModel):
 	id: int

@@ -13,22 +13,33 @@ import pyotp
 import qrcode
 import io
 import base64
+import logging
 
 from app.crypto.crypto import *
 from app.utils.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 @router.post("/signup", response_model=SignupResponse)
 @limiter.limit("1/30seconds")
 def signup(request: Request, user: UserCreate, db: Session = Depends(get_db)):
+	"""
+	Antienumeración: Siempre devuelve 200 con formato uniforme.
+	No revela si el email ya existe o no.
+	"""
 	if not user.email or not user.password:
 		raise HTTPException(status_code=400, detail="Email and password are required")
 
 	# Verifica si el correo ya está registrado
 	db_user = db.query(User).filter(User.email == user.email).first()
 	if db_user:
-		raise HTTPException(status_code=400, detail="Email already registered")
+		# Usuario ya existe - log en servidor, respuesta genérica al cliente
+		logger.info(f"Signup attempt for existing email: {user.email}")
+		return {
+			"detail": "Solicitud recibida",
+			"created": False
+		}
 
 	try:
 		hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
@@ -63,25 +74,45 @@ def signup(request: Request, user: UserCreate, db: Session = Depends(get_db)):
 		qr_img.save(buf, format="PNG")
 		qr_base64 = base64.b64encode(buf.getvalue()).decode()
 
+		logger.info(f"New user created: {new_user.email}")
 		return {
+			"detail": "Solicitud recibida",
+			"created": True,
 			"email": new_user.email,
 			"totp_secret": totp_secret,
 			"qr_code_base64": qr_base64,
 		}
 	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"Internal server error")
+		# Log detallado en servidor, respuesta genérica al cliente
+		logger.exception(f"Signup error for {user.email}: {e}")
+		raise HTTPException(status_code=500, detail="Error procesando solicitud")
 
 @router.post("/login", response_model=Token)
 @limiter.limit("1/5seconds")
 def signin(request: Request, login_data: UserLogin, db: Session = Depends(get_db)):
+	"""
+	Antienumeración: Todos los fallos (email inexistente, password incorrecta, TOTP incorrecto)
+	devuelven el mismo mensaje genérico. Log detallado solo en servidor.
+	"""
 	user = db.query(User).filter_by(email=login_data.email).first()
-	if not user or not verify_password(login_data.password, user.hashed_password):
-		raise HTTPException(status_code=401, detail="Invalid credentials")
+	
+	# Email no existe
+	if not user:
+		logger.warning(f"Login attempt for non-existent user: {login_data.email}")
+		raise HTTPException(status_code=401, detail="Credenciales no válidas")
+	
+	# Password incorrecta
+	if not verify_password(login_data.password, user.hashed_password):
+		logger.warning(f"Invalid password for user: {login_data.email}")
+		raise HTTPException(status_code=401, detail="Credenciales no válidas")
 
+	# TOTP incorrecto
 	if not verify_totp_token(user.totp_secret, login_data.totp_code):
-		raise HTTPException(status_code=401, detail="Invalid 2FA code")
+		logger.warning(f"Invalid TOTP for user: {login_data.email}")
+		raise HTTPException(status_code=401, detail="Credenciales no válidas")
 
-	# Crear tokens
+	# Login exitoso
+	logger.info(f"Successful login: {user.email}")
 	access_token = create_access_token({"sub": user.email}, scope="user")
 	refresh_token = create_refresh_token({"sub": user.email})
 
