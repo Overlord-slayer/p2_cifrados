@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from dotenv import load_dotenv
 from typing import *
 
@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from app.db.db import get_db
 from app.model.models import *
+
+from app.utils.limiter import limiter
 
 load_dotenv()
 
@@ -129,11 +131,13 @@ class BlockchainManager:
 router = APIRouter(prefix="", tags=["chat"])
 
 @router.get("/transactions")
-def get_transactions(db: Session = Depends(get_db)):
+@limiter.limit("1/5seconds")
+def get_transactions(request: Request, db: Session = Depends(get_db)):
 	manager = BlockchainManager(db)
 	return manager.get_all_blocks()
 
 @router.get("/verify-transactions")
-def get_transactions(db: Session = Depends(get_db)):
+@limiter.limit("1/5seconds")
+def get_transactions(request: Request, db: Session = Depends(get_db)):
 	manager = BlockchainManager(db)
 	return manager.verify_blockchain()

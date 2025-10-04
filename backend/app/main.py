@@ -2,6 +2,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from app.utils.limiter import limiter
+
+import os
+
+from app.routers import auth
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+import os
+
+from app.routers import auth
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -72,6 +87,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 		return response
 
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Incluir routers antes de montar StaticFiles
 app.include_router(auth.router)
