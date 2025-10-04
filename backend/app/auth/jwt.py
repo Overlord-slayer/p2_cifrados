@@ -26,12 +26,19 @@ import os
 import uuid
 import logging
 from dotenv import load_dotenv
+import uuid
+import logging
 
 load_dotenv()
-
 logger = logging.getLogger(__name__)
 
+# Config
 SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+	raise RuntimeError("SECRET_KEY no definido. Configure una clave segura en el entorno (ej. desde Vault).")
+
+# Recomendación: preferir RS256 y cargar claves desde archivos/secret manager
+# ALGORITHM = "RS256"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -55,12 +62,9 @@ if REDIS_URL:
         logger.warning(f"Redis connection failed, using in-memory blacklist: {e}")
         _redis_client = None
 
-def create_token(
-	data: dict,
-	expires_delta: timedelta,
-	token_type: Literal["access", "refresh"] = "access",
-	audience: Optional[str] = DEFAULT_AUDIENCE,
-) -> str:
+# Hooks que debes implementar con tu storage (ej. Redis/DB)
+# signature: (jti: str) -> None
+def register_jti_in_store(jti: str, expires_at: datetime, token_type: str):
 	"""
 	Crea un token JWT con claims robustos y expiración configurada.
 	Incluye: exp, iat, nbf, jti, iss, aud, type
@@ -90,39 +94,57 @@ def create_token(
 	})
 	return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def create_access_token(
-	data: dict, scope: str = "user", audience: Optional[str] = DEFAULT_AUDIENCE
+# signature: (jti: str) -> bool
+def is_jti_revoked(jti: str) -> bool:
+	"""
+	Comprueba si el jti ha sido revocado (devuelve True si revocado).
+	"""
+	raise NotImplementedError
+
+def _now_utc() -> datetime:
+	return datetime.now(timezone.utc)
+
+def _new_jti() -> str:
+	return str(uuid.uuid4())
+
+def create_token(
+	data: Dict[str, Any],
+	expires_delta: timedelta,
+	token_type: Literal["access", "refresh"] = "access",
+	audience: Optional[str] = DEFAULT_AUDIENCE,
 ) -> str:
-	"""
-	Crea un token de acceso con expiración corta.
+	payload = data.copy()  # no mutamos el input
+	now = _now_utc()
+	expire = now + expires_delta
+	jti = _new_jti()
+	# solo permitir claims concretos o usar prefijo para custom claims
+	# añadir claims estándares
+	payload.update({
+		"exp": expire,
+		"iat": now,
+		"nbf": now,
+		"jti": jti,
+		"type": token_type,
+		"aud": audience,
+		"iss": ISSUER,
+	})
+	token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+	# registrar jti (para revocación/rotación)
+	try:
+		register_jti_in_store(jti, expire, token_type)
+	except Exception as e:
+		# si falla el registro, loggear y decidir si permitir emisión (aquí lo permitimos pero registralo en monitor)
+		logger.exception("No se pudo registrar jti en store: %s", e)
+	return token
 
-	Args:
-		data (dict): Debe incluir `"sub"` (por ejemplo, ID de usuario).
-		scope (str): Rol o permisos asociados al token (ej. "admin", "user").
-		audience (Optional[str]): Audiencia para la que es válido el token.
+def create_access_token(data: Dict[str, Any], scope: str = "user", audience: Optional[str] = DEFAULT_AUDIENCE) -> str:
+	payload = data.copy()
+	payload["scope"] = scope
+	return create_token(payload, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), "access", audience)
 
-	Returns:
-		str: JWT de acceso.
-	"""
-	data["scope"] = scope
-	return create_token(
-		data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES), "access", audience
-	)
-
-def create_refresh_token(data: dict, audience: Optional[str] = DEFAULT_AUDIENCE) -> str:
-	"""
-	Crea un refresh token con expiración prolongada.
-
-	Args:
-		data (dict): Debe incluir `"sub"`.
-		audience (Optional[str]): Audiencia esperada.
-
-	Returns:
-		str: JWT de refresh.
-	"""
-	return create_token(
-		data, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS), "refresh", audience
-	)
+def create_refresh_token(data: Dict[str, Any], audience: Optional[str] = DEFAULT_AUDIENCE) -> str:
+	payload = data.copy()
+	return create_token(payload, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS), "refresh", audience)
 
 def decode_token(
 	token: str,
@@ -178,15 +200,6 @@ def decode_token(
 		return None
 
 def get_subject_from_token(token: str) -> Optional[str]:
-	"""
-	Extrae el valor del campo `sub` desde un JWT válido.
-
-	Args:
-		token (str): JWT codificado.
-
-	Returns:
-		str | None: ID del sujeto (`sub`) o `None` si no es válido.
-	"""
 	payload = decode_token(token)
 	if payload:
 		return payload.get("sub")
