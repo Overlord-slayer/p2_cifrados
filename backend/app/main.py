@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from slowapi import _rate_limit_exceeded_handler
@@ -37,7 +36,6 @@ load_dotenv()
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 	"""
 	Añade cabeceras de seguridad a todas las respuestas y oculta el header Server.
-	CSP estricta para la app, relajada solo para /docs y /redoc (Swagger).
 	"""
 	async def dispatch(self, request: Request, call_next):
 		response: Response = await call_next(request)
@@ -46,43 +44,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 		if "server" in response.headers:
 			del response.headers["server"]
 		
-		# Cabeceras de seguridad comunes
+		# Cabeceras de seguridad
 		response.headers["X-Content-Type-Options"] = "nosniff"
 		response.headers["X-Frame-Options"] = "DENY"
-		response.headers["Referrer-Policy"] = "no-referrer"
+		response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+		response.headers["X-XSS-Protection"] = "1; mode=block"
+		# CSP más permisivo para aplicaciones React/SPA
+		response.headers["Content-Security-Policy"] = (
+			"default-src 'self'; "
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+			"style-src 'self' 'unsafe-inline'; "
+			"img-src 'self' data: https:; "
+			"font-src 'self' data:; "
+			"connect-src 'self' http://localhost:8000 https://accounts.google.com https://oauth2.googleapis.com; "
+			"frame-src 'none'; "
+			"object-src 'none'; "
+			"base-uri 'self'"
+		)
 		
-		# CSP: estricta para app, relajada para /docs y /redoc
-		path = request.url.path
-		if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi.json"):
-			# CSP relajada para Swagger UI (necesita unsafe-inline)
-			response.headers["Content-Security-Policy"] = (
-				"default-src 'self'; "
-				"script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-				"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
-				"img-src 'self' data: https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
-				"font-src 'self' data: https://cdn.jsdelivr.net; "
-				"connect-src 'self'; "
-				"object-src 'none'; "
-				"base-uri 'self'; "
-				"form-action 'self'; "
-				"frame-ancestors 'none'; "
-				"frame-src 'none'"
-			)
-		else:
-			# CSP estricta para la aplicación (SIN unsafe-inline, unsafe-eval)
-			response.headers["Content-Security-Policy"] = (
-				"default-src 'self'; "
-				"script-src 'self'; "
-				"style-src 'self'; "
-				"img-src 'self' data:; "
-				"font-src 'self' data:; "
-				"connect-src 'self'; "
-				"object-src 'none'; "
-				"base-uri 'self'; "
-				"form-action 'self'; "
-				"frame-ancestors 'none'; "
-				"frame-src 'none'"
-			)
+		# HSTS solo en producción (asumiendo HTTPS)
+		environment = os.getenv("ENVIRONMENT", "development")
+		if environment == "production":
+			response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 		
 		return response
 
@@ -90,7 +73,6 @@ app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Incluir routers antes de montar StaticFiles
 app.include_router(auth.router)
 app.include_router(chat_router)
 app.include_router(chain_router)
@@ -108,8 +90,3 @@ app.add_middleware(
 
 app.add_middleware(RequestLoggerMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
-
-# Montar frontend build si existe
-dist_path = os.path.join(os.path.dirname(__file__), "../../frontend/dist")
-if os.path.isdir(dist_path):
-	app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")
